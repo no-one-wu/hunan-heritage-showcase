@@ -122,6 +122,51 @@
             z-index: 2;
             filter: drop-shadow(0 20px 50px rgba(0,0,0,0.45));
         }
+        /* 展开容器：从中心向两侧扩展，统一驱动纸和柄 */
+        .scroll-reveal {
+            position: absolute;
+            top: 6px;
+            bottom: 6px;
+            left: 50%;
+            width: 0;
+            transform: translateX(-50%);
+            overflow: hidden;
+            animation: revealScroll 1.8s ease-out 0.6s forwards;
+        }
+
+        @keyframes revealScroll {
+            0%   { width: 0; }
+            100% { width: calc(100% - 12px); }
+        }
+
+        /* 纸 — 固定在reveal内，左右留出柄的位置 */
+        .scroll-reveal .scroll-paper {
+            position: absolute;
+            top: 2px;
+            bottom: 2px;
+            left: 44px;
+            right: 44px;
+            transform: none;
+        }
+
+        /* 左柄 — 钉在reveal左边缘 */
+        .scroll-reveal .scroll-left {
+            position: absolute;
+            left: 3px;
+            top: 0;
+            bottom: 0;
+            width: 40px;
+        }
+
+        /* 右柄 — 钉在reveal右边缘 */
+        .scroll-reveal .scroll-right {
+            position: absolute;
+            right: 3px;
+            top: 0;
+            bottom: 0;
+            width: 40px;
+        }
+
         /* 视角渐入 */
         .scroll-wrapper.zoom-in {
             animation: zoomIntoScroll 2.0s ease-in-out forwards;
@@ -327,9 +372,6 @@
                 /* 层1：明黄底 */
                 linear-gradient(180deg, #fef9ed 0%, #fdf4e0 30%, #fef8ea 60%, #fcf2dd 100%);
             border-radius: 4px;
-            transform: scaleX(0);
-            transform-origin: center;
-            will-change: transform;
             border: none;
             box-shadow: inset 0 0 40px rgba(180,140,80,0.08);
         }
@@ -391,9 +433,7 @@
             align-items: center;
             z-index: 3;
         }
-        /* 初始位置：两杆对称居中，与JS初始值一致 */
-        .scroll-left  { left: calc(50% - 44px); }
-        .scroll-right { left: calc(50% + 4px); }
+        /* 柄位置由scroll-reveal容器控制 */
 
         /* 鎏金轴帽 (上下两端) */
         .scroll-rod-top, .scroll-rod-bottom {
@@ -483,12 +523,7 @@
             pointer-events: none;
         }
 
-        /* 左右轴：初始居中，JS动画统一驱动 */
-        .scroll-left, .scroll-right {
-            will-change: left;
-        }
-        .scroll-left  { left: 50%; }
-        .scroll-right { left: 50%; }
+        /* 左右轴：样式由scroll-reveal内规则控制 */
 
         /* ========== 多层水墨山水背景系统 ========== */
         body {
@@ -1303,19 +1338,21 @@
             <span class="poem-line">惟楚有材</span>
             <span class="poem-line">于斯为盛</span>
         </div>
-        <!-- 卷轴结构 -->
+        <!-- 卷轴结构：单一容器驱动，柄纸同步 -->
         <div class="scroll-wrapper">
-            <div class="scroll-left">
-                <div class="scroll-rod-top"></div>
-                <div class="scroll-rod-body"></div>
-                <div class="scroll-rod-bottom"></div>
+            <div class="scroll-reveal">
+                <div class="scroll-left">
+                    <div class="scroll-rod-top"></div>
+                    <div class="scroll-rod-body"></div>
+                    <div class="scroll-rod-bottom"></div>
+                </div>
+                <div class="scroll-right">
+                    <div class="scroll-rod-top"></div>
+                    <div class="scroll-rod-body"></div>
+                    <div class="scroll-rod-bottom"></div>
+                </div>
+                <div class="scroll-paper"></div>
             </div>
-            <div class="scroll-right">
-                <div class="scroll-rod-top"></div>
-                <div class="scroll-rod-body"></div>
-                <div class="scroll-rod-bottom"></div>
-            </div>
-            <div class="scroll-paper"></div>
         </div>
         <!-- 金光桃花源：视角入卷后发散 -->
         <div class="golden-burst">
@@ -2162,77 +2199,31 @@
 
     // ==================== 卷轴开场动画 ====================
     function runScrollIntro() {
-        // 诗句渐显
         const poem = document.querySelector('.scroll-poem');
         if (poem) poem.classList.add('visible');
 
-        // JS统一动画：纸(scaleX) + 左右柄(left) 同速同步
-        const paper = document.querySelector('.scroll-paper');
-        const leftRod = document.querySelector('.scroll-left');
-        const rightRod = document.querySelector('.scroll-right');
         const wrapper = document.querySelector('.scroll-wrapper');
+        const burst = document.querySelector('.golden-burst');
 
-        if (!paper || !leftRod || !rightRod || !wrapper) return;
+        // CSS revealScroll动画: 1.8s + 0.6s延迟 = 2.4s后纸柄同时到位
+        // 然后触发视角渐入 + 金光
+        setTimeout(() => {
+            if (wrapper) wrapper.classList.add('zoom-in');
+            if (burst) burst.classList.add('active');
+        }, 2400);
 
-        const ww = wrapper.clientWidth;
-        const rodW = 40;        // 柄宽
-        const rodGap = 4;       // 柄与纸边间距
-        const paperInset = 50;  // 纸距wrapper边距
-        const paperHalf = (ww - paperInset * 2) / 2;  // 纸半宽
-        const rodFromCenter = rodW / 2 + rodGap;      // 柄中心距纸边
-
-        const duration = 1800;  // 动画时长ms
-        const delay = 600;      // 延迟ms
-        const startTime = performance.now() + delay;
-
-        // 初始状态：清除margin偏移，精确计算位置
-        leftRod.style.marginLeft = '0';
-        rightRod.style.marginLeft = '0';
-        paper.style.transform = 'scaleX(0)';
-        leftRod.style.left = (ww / 2 - rodW - rodGap) + 'px';
-        rightRod.style.left = (ww / 2 + rodGap) + 'px';
-
-        function frame(now) {
-            let t = (now - startTime) / duration;
-            if (t < 0) { requestAnimationFrame(frame); return; }
-            if (t > 1) t = 1;
-
-            // easeOutCubic
-            const e = 1 - Math.pow(1 - t, 3);
-
-            // 纸：scaleX(e) — 从0展开到1
-            paper.style.transform = 'scaleX(' + e + ')';
-
-            // 柄：跟踪纸的视觉边缘
-            const edgeMove = paperHalf * e;  // 纸边从中心向外移动的距离
-            leftRod.style.left = (ww / 2 - edgeMove - rodW - rodGap) + 'px';
-            rightRod.style.left = (ww / 2 + edgeMove + rodGap) + 'px';
-
-            if (t < 1) {
-                requestAnimationFrame(frame);
-            } else {
-                // 纸柄到位后，触发视角渐入 + 金光桃花源
-                wrapper.classList.add('zoom-in');
-                const burst = document.querySelector('.golden-burst');
-                if (burst) burst.classList.add('active');
-
-                // 视角入卷完成后关闭
-                setTimeout(() => {
-                    const intro = document.getElementById('scrollIntro');
-                    intro.style.transition = 'opacity 0.35s ease';
-                    intro.style.opacity = '0';
-                    setTimeout(() => {
-                        intro.style.display = 'none';
-                        if (poem) poem.remove();
-                    }, 350);
-                }, 2000); // zoom-in动画2s
-            }
-        }
-
-        setTimeout(() => requestAnimationFrame(frame), delay);
+        // zoom-in动画2s结束后关闭
+        setTimeout(() => {
+            const intro = document.getElementById('scrollIntro');
+            intro.style.transition = 'opacity 0.35s ease';
+            intro.style.opacity = '0';
+            setTimeout(() => {
+                intro.style.display = 'none';
+                if (poem) poem.remove();
+            }, 350);
+        }, 4400);
     }
 
-    // 页面加载完成后运行
     window.addEventListener('load', () => {
         setTimeout(runScrollIntro, 200);
     });
