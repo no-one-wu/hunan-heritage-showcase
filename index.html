@@ -626,13 +626,9 @@
             animation: inkFlow 28s ease-in-out 2s infinite;
         }
 
-        /* ========== Canvas 粒子层 (增强) ========== */
+        /* ========== Canvas 粒子层 (已禁用) ========== */
         #particleCanvas {
-            position: fixed;
-            inset: 0;
-            z-index: 1;
-            pointer-events: none;
-            opacity: 0.9;
+            display: none;
         }
 
         /* ========== 底部山水剪影 ========== */
@@ -2401,7 +2397,7 @@
     });
 
     // ==================== 启动 ====================
-    initParticles();
+    // initParticles(); // 已禁用 — 性能优化
     loadSites();
     renderAll();
 })();
