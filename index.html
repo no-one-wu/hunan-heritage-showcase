@@ -80,6 +80,34 @@
             100% { width: 300vmax; height: 300vmax; opacity: 0.3; }
         }
 
+        /* 跳过按钮 */
+        .skip-btn {
+            position: absolute;
+            bottom: 32px;
+            right: 36px;
+            z-index: 10;
+            font-family: var(--font-heading);
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.55);
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.15);
+            padding: 7px 20px;
+            border-radius: 24px;
+            cursor: pointer;
+            letter-spacing: 0.06em;
+            transition: all 0.3s;
+            opacity: 0;
+            animation: skipFadeIn 0.6s ease 1.2s forwards;
+        }
+        .skip-btn:hover {
+            color: #fff;
+            background: rgba(255,255,255,0.14);
+            border-color: rgba(255,255,255,0.35);
+        }
+        @keyframes skipFadeIn {
+            to { opacity: 1; }
+        }
+
         /* 诗句 */
         .scroll-poem {
             position: absolute;
@@ -1336,6 +1364,8 @@
     <div class="scroll-stage">
         <!-- 墨扩散背景 -->
         <div class="ink-spread"></div>
+        <!-- 跳过按钮 -->
+        <button class="skip-btn" id="skipIntro">跳过 ›</button>
         <!-- 诗句 -->
         <div class="scroll-poem">
             <span class="poem-line">惟楚有材</span>
@@ -2056,7 +2086,7 @@
     </div>
     <div class="divider"><span class="line"></span><span class="dot"></span><span class="line"></span></div>
     <div class="content-section">
-        <h2>📖 遗址介绍</h2>
+        <h2>介绍</h2>
         <div class="detail-text">${escapeHtml(site.detailContent)}</div>
     </div>
     <div class="gallery-section">
@@ -2214,6 +2244,23 @@
     });
 
     // ==================== 卷轴开场动画 ====================
+    let introTimers = [];
+
+    function skipIntro() {
+        // 清除所有待执行的定时器
+        introTimers.forEach(t => clearTimeout(t));
+        introTimers = [];
+
+        const intro = document.getElementById('scrollIntro');
+        const poem = document.querySelector('.scroll-poem');
+        intro.style.transition = 'opacity 0.25s ease';
+        intro.style.opacity = '0';
+        setTimeout(() => {
+            intro.style.display = 'none';
+            if (poem) poem.remove();
+        }, 250);
+    }
+
     function runScrollIntro() {
         const poem = document.querySelector('.scroll-poem');
         if (poem) poem.classList.add('visible');
@@ -2221,24 +2268,38 @@
         const wrapper = document.querySelector('.scroll-wrapper');
         const burst = document.querySelector('.golden-burst');
 
+        // 跳过按钮
+        const skipBtn = document.getElementById('skipIntro');
+        if (skipBtn) skipBtn.addEventListener('click', skipIntro);
+
         // CSS revealScroll动画: 1.8s + 0.6s延迟 = 2.4s后纸柄同时到位
-        // 然后触发视角渐入 + 金光
-        setTimeout(() => {
+        introTimers.push(setTimeout(() => {
             if (wrapper) wrapper.classList.add('zoom-in');
             if (burst) burst.classList.add('active');
-        }, 2400);
+        }, 2400));
 
         // zoom-in动画2s结束后关闭
-        setTimeout(() => {
+        introTimers.push(setTimeout(() => {
             const intro = document.getElementById('scrollIntro');
             intro.style.transition = 'opacity 0.35s ease';
             intro.style.opacity = '0';
-            setTimeout(() => {
+            introTimers.push(setTimeout(() => {
                 intro.style.display = 'none';
                 if (poem) poem.remove();
-            }, 350);
-        }, 4400);
+            }, 350));
+        }, 4400));
     }
+
+    // 键盘跳过 (Esc / Space / Enter)
+    document.addEventListener('keydown', function(e) {
+        const intro = document.getElementById('scrollIntro');
+        if (intro && intro.style.display !== 'none') {
+            if (e.key === 'Escape' || e.key === ' ' || e.key === 'Enter') {
+                e.preventDefault();
+                skipIntro();
+            }
+        }
+    });
 
     window.addEventListener('load', () => {
         setTimeout(runScrollIntro, 200);
