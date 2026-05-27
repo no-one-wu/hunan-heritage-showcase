@@ -1678,7 +1678,18 @@
             try {
                 sites = JSON.parse(stored);
                 if (sites.length > 0) {
+                    // 迁移：确保所有遗址有 featured 属性
+                    let hasFeatured = false;
+                    sites.forEach(s => {
+                        if (s.featured === undefined) s.featured = false;
+                        if (s.featured) hasFeatured = true;
+                    });
+                    // 如果没有任何精选，自动标记前5个
+                    if (!hasFeatured) {
+                        sites.slice(0, Math.min(5, sites.length)).forEach(s => s.featured = true);
+                    }
                     nextId = Math.max(...sites.map(s => s.id)) + 1;
+                    saveSites();
                     return;
                 }
             } catch(e) {}
@@ -1728,7 +1739,11 @@
 
     // ==================== 轮播 ====================
     function renderCarousel() {
-        const featured = sites.filter(s => s.featured);
+        let featured = sites.filter(s => s.featured);
+        // 兜底：如果没有精选，取前5个作为默认精选
+        if (featured.length === 0 && sites.length > 0) {
+            featured = sites.slice(0, Math.min(5, sites.length));
+        }
         if (featured.length === 0) {
             document.querySelector('.carousel-section').style.display = 'none';
             return;
