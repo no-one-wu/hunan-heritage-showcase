@@ -433,6 +433,17 @@
             align-items: center;
             z-index: 3;
         }
+        /* 卷中画 */
+        .scroll-art {
+            position: absolute;
+            inset: 12px 8px;
+            width: calc(100% - 16px);
+            height: calc(100% - 24px);
+            object-fit: contain;
+            border-radius: 2px;
+            pointer-events: none;
+        }
+
         /* 柄位置由scroll-reveal容器控制 */
 
         /* 鎏金轴帽 (上下两端) */
@@ -1342,7 +1353,9 @@
                     <div class="scroll-rod-body"></div>
                     <div class="scroll-rod-bottom"></div>
                 </div>
-                <div class="scroll-paper"></div>
+                <div class="scroll-paper">
+                    <img src="jzpj.png" alt="卷中画" class="scroll-art">
+                </div>
             </div>
         </div>
         <!-- 金光桃花源：视角入卷后发散 -->
