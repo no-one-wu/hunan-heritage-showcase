@@ -391,9 +391,9 @@
             align-items: center;
             z-index: 3;
         }
-        /* 初始位置：两杆紧贴中心 */
-        .scroll-left  { left: calc(50% - 42px); }
-        .scroll-right { left: calc(50% + 2px); }
+        /* 初始位置：两杆对称居中，与JS初始值一致 */
+        .scroll-left  { left: calc(50% - 44px); }
+        .scroll-right { left: calc(50% + 4px); }
 
         /* 鎏金轴帽 (上下两端) */
         .scroll-rod-top, .scroll-rod-bottom {
@@ -430,13 +430,17 @@
             top: 3px;
         }
 
-        /* 紫檀木轴身 */
+        /* 紫檀木轴身 + 龙鳞纹 */
         .scroll-rod-body {
             flex: 1;
             width: 30px;
-            background: linear-gradient(90deg,
-                #2a1810 0%, #4a2c18 15%, #3d2212 30%,
-                #5c3820 50%, #3d2212 70%, #4a2c18 85%, #2a1810 100%);
+            background:
+                /* 龙鳞纹 */
+                url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='16'%3E%3Cpath d='M12 0 Q18 6 12 12 Q6 6 12 0Z' fill='none' stroke='rgba(220,180,100,0.18)' stroke-width='0.8'/%3E%3Cpath d='M12 1 Q16 5 12 10 Q8 5 12 1Z' fill='none' stroke='rgba(240,200,120,0.12)' stroke-width='0.5'/%3E%3C/svg%3E") 0 0/12px 8px,
+                /* 木纹基底 */
+                linear-gradient(90deg,
+                    #2a1810 0%, #4a2c18 15%, #3d2212 30%,
+                    #5c3820 50%, #3d2212 70%, #4a2c18 85%, #2a1810 100%);
             border-radius: 8px;
             margin: 4px 0;
             box-shadow:
@@ -444,20 +448,38 @@
                 0 2px 4px rgba(0,0,0,0.2);
             position: relative;
         }
-        /* 紫檀木纹 */
+        /* 龙纹金线 */
         .scroll-rod-body::before {
             content: '';
             position: absolute;
             inset: 0;
-            background: repeating-linear-gradient(
-                0deg,
-                transparent 0px,
-                rgba(180,130,80,0.06) 2px,
-                transparent 4px,
-                rgba(200,150,90,0.04) 6px,
-                transparent 8px
-            );
+            background:
+                /* 纵向金丝 */
+                repeating-linear-gradient(
+                    0deg,
+                    transparent 0px,
+                    rgba(200,160,80,0.05) 3px,
+                    transparent 6px,
+                    rgba(180,140,60,0.04) 9px,
+                    transparent 12px
+                ),
+                /* 中心金色竖线 */
+                linear-gradient(90deg,
+                    transparent 0%, transparent 40%,
+                    rgba(220,180,100,0.10) 45%, rgba(220,180,100,0.15) 50%,
+                    rgba(220,180,100,0.10) 55%, transparent 60%,
+                    transparent 100%);
             border-radius: 8px;
+            pointer-events: none;
+        }
+        /* 龙纹边线 */
+        .scroll-rod-body::after {
+            content: '';
+            position: absolute;
+            top: 4px; bottom: 4px;
+            left: 4px; right: 4px;
+            border: 0.5px solid rgba(200,160,80,0.12);
+            border-radius: 5px;
             pointer-events: none;
         }
 
