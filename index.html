@@ -1774,13 +1774,13 @@
             try {
                 sites = JSON.parse(stored);
                 if (sites.length > 0) {
-                    // 迁移：确保所有遗址有 featured 属性
+                    // 迁移：确保所有遗址有 featured 和 gallery 属性
                     let hasFeatured = false;
                     sites.forEach(s => {
                         if (s.featured === undefined) s.featured = false;
                         if (s.featured) hasFeatured = true;
+                        if (!s.gallery) s.gallery = [];
                     });
-                    // 如果没有任何精选，自动标记前5个
                     if (!hasFeatured) {
                         sites.slice(0, Math.min(5, sites.length)).forEach(s => s.featured = true);
                     }
@@ -1791,6 +1791,7 @@
             } catch(e) {}
         }
         sites = JSON.parse(JSON.stringify(defaultSites));
+        sites.forEach(s => { if (!s.gallery) s.gallery = []; });
         saveSites();
     }
 
@@ -1807,7 +1808,8 @@
             shortDesc: shortDesc || '暂无描述',
             imgUrl: imgUrl || `https://picsum.photos/seed/site${nextId}/800/520`,
             detailContent: detailContent || '暂无详细介绍。',
-            featured: false
+            featured: false,
+            gallery: []
         };
         sites.push(site);
         saveSites();
@@ -2047,17 +2049,21 @@
         .content-section,.gallery-section{background:var(--cream);border-radius:18px;padding:24px 26px;box-shadow:0 4px 20px rgba(26,20,16,0.04);border:1px solid rgba(180,160,130,0.18);margin-bottom:18px}
         .content-section h2,.gallery-section h2{font-family:var(--font-heading);font-size:1.1rem;color:var(--ink-deep);margin-bottom:10px}
         .content-section .detail-text{font-size:0.93rem;line-height:1.85;color:var(--ink-body);padding:6px 0}
-        .gallery-placeholder{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-        .gallery-placeholder .gallery-slot{aspect-ratio:4/3;border-radius:12px;background:linear-gradient(135deg,var(--paper-warm),var(--paper));border:2px dashed rgba(180,160,130,0.4);display:flex;align-items:center;justify-content:center;color:var(--ink-muted);font-size:0.8rem;transition:all 0.3s;cursor:pointer}
-        .gallery-placeholder .gallery-slot:hover{background:var(--gold-pale);border-color:var(--gold);color:var(--bronze-dark)}
+        .gallery-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+        .gallery-item{position:relative;aspect-ratio:4/3;border-radius:10px;overflow:hidden;background:var(--paper-warm)}
+        .gallery-item img{width:100%;height:100%;object-fit:cover;cursor:pointer;transition:transform 0.3s}
+        .gallery-item:hover img{transform:scale(1.05)}
+        .gallery-item .del-btn{position:absolute;top:6px;right:6px;width:22px;height:22px;background:rgba(180,50,40,0.85);color:#fff;border:none;border-radius:50%;cursor:pointer;font-size:0.7rem;line-height:22px;text-align:center;opacity:0;transition:opacity 0.2s}
+        .gallery-item:hover .del-btn{opacity:1}
+        .gallery-add{aspect-ratio:4/3;border-radius:10px;border:2px dashed rgba(180,160,130,0.5);display:flex;align-items:center;justify-content:center;color:var(--ink-muted);font-size:0.85rem;cursor:pointer;transition:all 0.3s;background:rgba(255,255,255,0.3)}
+        .gallery-add:hover{border-color:var(--gold);color:var(--bronze-dark);background:var(--gold-pale)}
+        .gallery-empty{grid-column:1/-1;text-align:center;color:var(--ink-muted);padding:32px;font-size:0.85rem}
         .btn-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px;justify-content:center}
         .btn{font-family:var(--font-heading);font-size:0.88rem;font-weight:600;padding:9px 24px;border-radius:36px;border:none;cursor:pointer;letter-spacing:0.05em;transition:all 0.25s;text-decoration:none}
-        .btn-gallery{background:var(--vermillion-deep);color:#fff}
-        .btn-gallery:hover{background:var(--vermillion);transform:translateY(-2px);box-shadow:0 6px 20px rgba(181,52,58,0.25)}
         .btn-back{background:transparent;color:var(--ink-muted);border:1.5px solid var(--paper-dark)}
         .btn-back:hover{background:var(--paper-dark)}
         .footer{text-align:center;padding:8px;font-size:0.74rem;color:var(--ink-muted);margin-top:16px}
-        @media(max-width:600px){.header h1{font-size:1.5rem}.gallery-placeholder{grid-template-columns:repeat(2,1fr)}}
+        @media(max-width:600px){.header h1{font-size:1.5rem}.gallery-grid{grid-template-columns:repeat(2,1fr)}}
     </style>
 </head>
 <body>
@@ -2081,20 +2087,63 @@
         <div class="detail-text">${escapeHtml(site.detailContent)}</div>
     </div>
     <div class="gallery-section">
-        <h2>🖼️ 图片集 <span style="font-size:0.7rem;color:var(--ink-muted);font-weight:400;">（即将开放）</span></h2>
-        <div class="gallery-placeholder">
-            <div class="gallery-slot" title="图片集功能即将上线">🏯<br><span style="font-size:0.7rem;">即将上线</span></div>
-            <div class="gallery-slot" title="图片集功能即将上线">🏞️<br><span style="font-size:0.7rem;">即将上线</span></div>
-            <div class="gallery-slot" title="图片集功能即将上线">📸<br><span style="font-size:0.7rem;">即将上线</span></div>
-        </div>
-        <p style="font-size:0.76rem;color:var(--ink-muted);margin-top:10px;text-align:center">📌 图片集功能即将开放，届时可浏览该遗址高清图集</p>
+        <h2>🖼️ 图片集</h2>
+        <div class="gallery-grid" id="galleryGrid"></div>
     </div>
     <div class="btn-row">
-        <button class="btn btn-gallery" onclick="alert('图片集功能即将上线！\\n\\n届时可浏览「${escapeHtml(site.name)}」的高清图集。')">🖼️ 查看完整图片集（即将开放）</button>
         <button class="btn btn-back" onclick="window.close()">↩ 关闭返回主柜</button>
     </div>
     <div class="footer">湖湘文脉 · 遗址风华 | ${escapeHtml(site.name)}</div>
 </div>
+<script>
+    const SITE_ID = ${site.id};
+    let gallery = ${JSON.stringify(site.gallery || [])};
+
+    function saveGallery() {
+        localStorage.setItem('galleryUpdate', JSON.stringify({
+            siteId: SITE_ID,
+            gallery: gallery,
+            timestamp: Date.now()
+        }));
+    }
+
+    function renderGallery() {
+        const grid = document.getElementById('galleryGrid');
+        grid.innerHTML = '';
+        gallery.forEach((url, i) => {
+            const item = document.createElement('div');
+            item.className = 'gallery-item';
+            item.innerHTML = '<img src="' + url + '" alt="图片" onclick="window.open(\'' + url + '\')" onerror="this.src=\\'https://placehold.co/400x300/f3ecdb/8b7355?text=加载失败\\'"><button class="del-btn" data-idx="' + i + '">×</button>';
+            grid.appendChild(item);
+        });
+        const addSlot = document.createElement('div');
+        addSlot.className = 'gallery-add';
+        addSlot.textContent = '+ 添加图片';
+        addSlot.addEventListener('click', addImage);
+        grid.appendChild(addSlot);
+
+        document.querySelectorAll('.del-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const idx = parseInt(this.getAttribute('data-idx'));
+                gallery.splice(idx, 1);
+                saveGallery();
+                renderGallery();
+            });
+        });
+    }
+
+    function addImage() {
+        const url = prompt('输入图片URL：');
+        if (url && url.trim()) {
+            gallery.push(url.trim());
+            saveGallery();
+            renderGallery();
+        }
+    }
+
+    renderGallery();
+<\/script>
 </body>
 </html>`;
 
@@ -2177,6 +2226,17 @@
                     sites = updated;
                     if (sites.length > 0) nextId = Math.max(...sites.map(s => s.id)) + 1;
                     renderAll();
+                }
+            } catch(ex) {}
+        }
+        // 图集更新同步
+        if (e.key === 'galleryUpdate' && e.newValue) {
+            try {
+                const data = JSON.parse(e.newValue);
+                const target = sites.find(s => s.id === data.siteId);
+                if (target) {
+                    target.gallery = data.gallery;
+                    saveSites();
                 }
             } catch(ex) {}
         }
