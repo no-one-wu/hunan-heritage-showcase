@@ -1826,12 +1826,17 @@
 
     // ==================== 数据加载 ====================
     function loadSites() {
+        const DATA_VERSION = 2; // 递增此值强制刷新数据
+        const storedVer = localStorage.getItem('hunanDataVersion');
         const stored = localStorage.getItem('hunanHeritageSites');
-        if (stored) {
+
+        // 版本不匹配则丢弃旧数据
+        if (storedVer != DATA_VERSION) {
+            localStorage.removeItem('hunanHeritageSites');
+        } else if (stored) {
             try {
                 sites = JSON.parse(stored);
                 if (sites.length > 0) {
-                    // 迁移：确保所有遗址有 featured 和 gallery 属性
                     let hasFeatured = false;
                     sites.forEach(s => {
                         if (s.featured === undefined) s.featured = false;
@@ -1843,6 +1848,7 @@
                     }
                     nextId = Math.max(...sites.map(s => s.id)) + 1;
                     saveSites();
+                    localStorage.setItem('hunanDataVersion', DATA_VERSION);
                     return;
                 }
             } catch(e) {}
@@ -1850,6 +1856,7 @@
         sites = JSON.parse(JSON.stringify(defaultSites));
         sites.forEach(s => { if (!s.gallery) s.gallery = []; });
         saveSites();
+        localStorage.setItem('hunanDataVersion', DATA_VERSION);
     }
 
     function saveSites() {
