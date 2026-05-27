@@ -2055,8 +2055,9 @@
         .gallery-item:hover img{transform:scale(1.05)}
         .gallery-item .del-btn{position:absolute;top:6px;right:6px;width:22px;height:22px;background:rgba(180,50,40,0.85);color:#fff;border:none;border-radius:50%;cursor:pointer;font-size:0.7rem;line-height:22px;text-align:center;opacity:0;transition:opacity 0.2s}
         .gallery-item:hover .del-btn{opacity:1}
-        .gallery-add{aspect-ratio:4/3;border-radius:10px;border:2px dashed rgba(180,160,130,0.5);display:flex;align-items:center;justify-content:center;color:var(--ink-muted);font-size:0.85rem;cursor:pointer;transition:all 0.3s;background:rgba(255,255,255,0.3)}
+        .gallery-add{aspect-ratio:auto;min-height:120px;border-radius:10px;border:2px dashed rgba(180,160,130,0.5);display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--ink-muted);font-size:0.85rem;cursor:pointer;transition:all 0.3s;background:rgba(255,255,255,0.3);padding:12px}
         .gallery-add:hover{border-color:var(--gold);color:var(--bronze-dark);background:var(--gold-pale)}
+        .gallery-add.active{cursor:default;border-style:solid;border-color:var(--gold);padding:12px}
         .gallery-empty{grid-column:1/-1;text-align:center;color:var(--ink-muted);padding:32px;font-size:0.85rem}
         .btn-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px;justify-content:center}
         .btn{font-family:var(--font-heading);font-size:0.88rem;font-weight:600;padding:9px 24px;border-radius:36px;border:none;cursor:pointer;letter-spacing:0.05em;transition:all 0.25s;text-decoration:none}
@@ -2113,33 +2114,52 @@
         gallery.forEach((url, i) => {
             const item = document.createElement('div');
             item.className = 'gallery-item';
-            item.innerHTML = '<img src="' + url + '" alt="图片" onclick="window.open(\'' + url + '\')" onerror="this.src=\\'https://placehold.co/400x300/f3ecdb/8b7355?text=加载失败\\'"><button class="del-btn" data-idx="' + i + '">×</button>';
+            var img = document.createElement('img');
+            img.src = url;
+            img.alt = '图片';
+            img.onclick = function() { window.open(url); };
+            img.onerror = function() { this.src = 'https://placehold.co/400x300/f3ecdb/8b7355?text=加载失败'; };
+            item.appendChild(img);
+            var del = document.createElement('button');
+            del.className = 'del-btn';
+            del.textContent = '×';
+            del.setAttribute('data-idx', i);
+            del.onclick = function(e) {
+                e.stopPropagation();
+                gallery.splice(parseInt(this.getAttribute('data-idx')), 1);
+                saveGallery();
+                renderGallery();
+            };
+            item.appendChild(del);
             grid.appendChild(item);
         });
         const addSlot = document.createElement('div');
         addSlot.className = 'gallery-add';
+        addSlot.id = 'galleryAddSlot';
         addSlot.textContent = '+ 添加图片';
-        addSlot.addEventListener('click', addImage);
+        addSlot.onclick = showAddInput;
         grid.appendChild(addSlot);
-
-        document.querySelectorAll('.del-btn').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const idx = parseInt(this.getAttribute('data-idx'));
-                gallery.splice(idx, 1);
-                saveGallery();
-                renderGallery();
-            });
-        });
     }
 
-    function addImage() {
-        const url = prompt('输入图片URL：');
-        if (url && url.trim()) {
-            gallery.push(url.trim());
-            saveGallery();
+    function showAddInput() {
+        var slot = document.getElementById('galleryAddSlot');
+        if (!slot) return;
+        slot.innerHTML = '<input type="text" id="newImgUrl" placeholder="粘贴图片URL" style="width:100%;padding:8px 10px;border:1px solid rgba(180,160,130,0.5);border-radius:8px;font-size:0.8rem;font-family:inherit;outline:none;background:rgba(255,255,255,0.8)"><div style="display:flex;gap:6px;margin-top:6px"><button id="confirmAdd" style="flex:1;padding:5px;border:none;border-radius:6px;background:#8b1a2b;color:#fff;cursor:pointer;font-size:0.75rem">确认</button><button id="cancelAdd" style="flex:1;padding:5px;border:1px solid rgba(180,160,130,0.4);border-radius:6px;background:transparent;cursor:pointer;font-size:0.75rem;color:#666">取消</button></div>';
+        slot.className = 'gallery-add active';
+        slot.onclick = null;
+        document.getElementById('confirmAdd').onclick = function() {
+            var url = document.getElementById('newImgUrl').value.trim();
+            if (url) {
+                gallery.push(url);
+                saveGallery();
+            }
             renderGallery();
-        }
+        };
+        document.getElementById('cancelAdd').onclick = function() { renderGallery(); };
+        setTimeout(function() {
+            var inp = document.getElementById('newImgUrl');
+            if (inp) inp.focus();
+        }, 100);
     }
 
     renderGallery();
