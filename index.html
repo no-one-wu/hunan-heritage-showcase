@@ -1,0 +1,2210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>湖湘文脉 · 文化遗址展示</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ink-deep: #1a1410;
+            --ink-body: #3d3226;
+            --ink-muted: #7a6e5e;
+            --paper: #faf6ed;
+            --paper-warm: #f3ecdb;
+            --paper-dark: #e8dfc8;
+            --vermillion: #b5343a;
+            --vermillion-deep: #8b1a2b;
+            --vermillion-light: #d4695a;
+            --gold: #c9a24e;
+            --gold-light: #e0c878;
+            --gold-pale: #f5eacc;
+            --jade: #6b8b7a;
+            --bronze: #8b7355;
+            --cream: #fffef9;
+            --shadow-sm: 0 2px 12px rgba(26,20,16,0.06);
+            --shadow-md: 0 8px 32px rgba(26,20,16,0.10);
+            --shadow-lg: 0 16px 48px rgba(26,20,16,0.14);
+            --shadow-gold: 0 4px 20px rgba(201,162,78,0.25);
+            --radius-sm: 10px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+            --font-display: 'ZCOOL XiaoWei', 'Noto Serif SC', 'SimSun', serif;
+            --font-heading: 'Noto Serif SC', 'SimSun', 'STSong', serif;
+            --font-body: 'Noto Serif SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        /* ========== 卷轴开场动画 ========== */
+        #scrollIntro {
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #1a1410;
+            overflow: hidden;
+            transition: opacity 0.4s ease;
+        }
+
+        .scroll-stage {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 墨扩散效果 */
+        .ink-spread {
+            position: absolute;
+            width: 0;
+            height: 0;
+            background: radial-gradient(circle, rgba(245,239,224,0.7) 0%, rgba(243,236,219,0.3) 40%, transparent 70%);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: inkBloom 2.2s ease-out 0.3s forwards;
+            z-index: 1;
+        }
+
+        @keyframes inkBloom {
+            0% { width: 0; height: 0; opacity: 0; }
+            40% { opacity: 0.9; }
+            100% { width: 300vmax; height: 300vmax; opacity: 0.3; }
+        }
+
+        /* 诗句 */
+        .scroll-poem {
+            position: absolute;
+            top: 18%;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 3;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            opacity: 0;
+        }
+        .scroll-poem.visible {
+            animation: poemFade 2.4s ease 0.6s forwards;
+        }
+        .poem-line {
+            font-family: var(--font-display);
+            font-size: clamp(1.8rem, 4vw, 3rem);
+            color: #c9a24e;
+            letter-spacing: 0.2em;
+            font-weight: 400;
+            text-shadow: 0 0 20px rgba(200,160,70,0.4), 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        @keyframes poemFade {
+            0% { opacity: 0; transform: translateX(-50%) translateY(12px); }
+            30% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            80% { opacity: 1; }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-8px); }
+        }
+
+        /* 卷轴容器 */
+        .scroll-wrapper {
+            position: relative;
+            width: 78vw;
+            max-width: 1000px;
+            height: 50vh;
+            max-height: 380px;
+            z-index: 2;
+            filter: drop-shadow(0 20px 50px rgba(0,0,0,0.45));
+        }
+        /* 视角渐入 */
+        .scroll-wrapper.zoom-in {
+            animation: zoomIntoScroll 2.0s ease-in-out forwards;
+        }
+
+        /* ===== 金光桃花源 — 大爆发版 ===== */
+        .golden-burst {
+            position: fixed;
+            inset: -50%;
+            z-index: 6;
+            pointer-events: none;
+            opacity: 0;
+        }
+        .golden-burst.active {
+            animation: burstReveal 2.8s ease-out forwards;
+        }
+
+        @keyframes burstReveal {
+            0%   { opacity: 0; }
+            12%  { opacity: 1; }
+            70%  { opacity: 0.85; }
+            100% { opacity: 0; }
+        }
+
+        /* 光芒射线 — 48束粗金线 */
+        .light-rays {
+            position: absolute;
+            inset: 0;
+            background:
+                conic-gradient(
+                    from 0deg,
+                    transparent 0deg,    rgba(255,230,140,0.25) 1.5deg, transparent 3deg,
+                    transparent 8deg,    rgba(255,210,110,0.18) 9deg,   transparent 11deg,
+                    transparent 16deg,   rgba(255,240,150,0.30) 17.5deg, transparent 19deg,
+                    transparent 24deg,   rgba(255,200,95,0.16)  25deg,  transparent 27deg,
+                    transparent 32deg,   rgba(255,225,130,0.22) 33deg,  transparent 35deg,
+                    transparent 40deg,   rgba(255,240,145,0.28) 41.5deg, transparent 43deg,
+                    transparent 48deg,   rgba(255,210,105,0.20) 49deg,  transparent 51deg,
+                    transparent 56deg,   rgba(255,235,135,0.26) 57deg,  transparent 59deg,
+                    transparent 64deg,   rgba(255,200,95,0.17)  65deg,  transparent 67deg,
+                    transparent 72deg,   rgba(255,245,150,0.32) 73.5deg, transparent 75deg,
+                    transparent 80deg,   rgba(255,215,115,0.19) 81deg,  transparent 83deg,
+                    transparent 88deg,   rgba(255,230,140,0.24) 89deg,  transparent 91deg,
+                    transparent 96deg,   rgba(255,205,100,0.21) 97deg,  transparent 99deg,
+                    transparent 104deg,  rgba(255,240,145,0.29) 105deg, transparent 107deg,
+                    transparent 112deg,  rgba(255,220,125,0.18) 113deg, transparent 115deg,
+                    transparent 120deg,  rgba(255,235,135,0.27) 121.5deg, transparent 123deg,
+                    transparent 128deg,  rgba(255,210,110,0.22) 129deg, transparent 131deg,
+                    transparent 136deg,  rgba(255,245,150,0.31) 137deg, transparent 139deg,
+                    transparent 144deg,  rgba(255,200,95,0.18)  145deg, transparent 147deg,
+                    transparent 152deg,  rgba(255,225,130,0.25) 153deg, transparent 155deg,
+                    transparent 160deg,  rgba(255,240,140,0.30) 161.5deg, transparent 163deg,
+                    transparent 168deg,  rgba(255,215,110,0.20) 169deg, transparent 171deg,
+                    transparent 176deg,  rgba(255,235,135,0.26) 177deg, transparent 179deg,
+                    transparent 184deg,  rgba(255,205,100,0.23) 185deg, transparent 187deg,
+                    transparent 192deg,  rgba(255,245,148,0.28) 193deg, transparent 195deg,
+                    transparent 200deg,  rgba(255,220,120,0.19) 201deg, transparent 203deg,
+                    transparent 208deg,  rgba(255,230,140,0.27) 209deg, transparent 211deg,
+                    transparent 216deg,  rgba(255,210,105,0.21) 217deg, transparent 219deg,
+                    transparent 224deg,  rgba(255,240,145,0.30) 225.5deg, transparent 227deg,
+                    transparent 232deg,  rgba(255,200,98,0.17)  233deg, transparent 235deg,
+                    transparent 240deg,  rgba(255,225,130,0.25) 241deg, transparent 243deg,
+                    transparent 248deg,  rgba(255,245,150,0.32) 249.5deg, transparent 251deg,
+                    transparent 256deg,  rgba(255,215,115,0.20) 257deg, transparent 259deg,
+                    transparent 264deg,  rgba(255,235,138,0.26) 265deg, transparent 267deg,
+                    transparent 272deg,  rgba(255,205,100,0.22) 273deg, transparent 275deg,
+                    transparent 280deg,  rgba(255,240,142,0.29) 281deg, transparent 283deg,
+                    transparent 288deg,  rgba(255,220,120,0.18) 289deg, transparent 291deg,
+                    transparent 296deg,  rgba(255,230,135,0.27) 297deg, transparent 299deg,
+                    transparent 304deg,  rgba(255,210,108,0.24) 305deg, transparent 307deg,
+                    transparent 312deg,  rgba(255,245,148,0.31) 313deg, transparent 315deg,
+                    transparent 320deg,  rgba(255,200,95,0.19)  321deg, transparent 323deg,
+                    transparent 328deg,  rgba(255,225,128,0.26) 329deg, transparent 331deg,
+                    transparent 336deg,  rgba(255,240,140,0.28) 337deg, transparent 339deg,
+                    transparent 344deg,  rgba(255,215,112,0.21) 345deg, transparent 347deg,
+                    transparent 352deg,  rgba(255,235,135,0.30) 353deg, transparent 355deg,
+                    transparent 360deg
+                );
+            animation: raysSpin 12s linear infinite;
+        }
+
+        @keyframes raysSpin {
+            0%   { transform: rotate(0deg) scale(0.2); opacity: 0; }
+            8%   { opacity: 1; }
+            30%  { transform: rotate(120deg) scale(2.5); opacity: 1; }
+            70%  { transform: rotate(280deg) scale(4); opacity: 0.7; }
+            100% { transform: rotate(360deg) scale(5.5); opacity: 0; }
+        }
+
+        /* 冲击波环 */
+        .shockwave {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 3px solid rgba(255,220,120,0.8);
+            transform: translate(-50%, -50%);
+            opacity: 0;
+        }
+        .golden-burst.active .shockwave:nth-child(3) {
+            animation: shockExpand 2.0s ease-out 0.1s forwards;
+        }
+        .golden-burst.active .shockwave:nth-child(4) {
+            animation: shockExpand 2.2s ease-out 0.4s forwards;
+        }
+        .golden-burst.active .shockwave:nth-child(5) {
+            animation: shockExpand 2.4s ease-out 0.7s forwards;
+        }
+
+        @keyframes shockExpand {
+            0%   { width: 40px; height: 40px; opacity: 1; border-width: 4px; }
+            100% { width: 350vmax; height: 350vmax; opacity: 0; border-width: 0.5px; }
+        }
+
+        /* 核心光球 — 大到覆盖全屏 */
+        .glow-core {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 200px;
+            height: 200px;
+            transform: translate(-50%, -50%);
+            background: radial-gradient(circle,
+                rgba(255,255,240,1) 0%,
+                rgba(255,245,200,0.9) 6%,
+                rgba(255,230,160,0.7) 15%,
+                rgba(255,210,110,0.45) 30%,
+                rgba(255,180,70,0.2) 50%,
+                rgba(240,150,40,0.06) 68%,
+                transparent 80%);
+            border-radius: 50%;
+            animation: corePulse 1.2s ease-in-out infinite;
+            box-shadow:
+                0 0 60px rgba(255,240,180,0.9),
+                0 0 120px rgba(255,220,140,0.7),
+                0 0 200px rgba(255,200,100,0.5),
+                0 0 300px rgba(255,180,60,0.35),
+                0 0 450px rgba(255,160,30,0.2),
+                0 0 600px rgba(255,140,20,0.1);
+        }
+
+        @keyframes corePulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1);   opacity: 0.85; }
+            30%      { transform: translate(-50%, -50%) scale(2.2); opacity: 1; }
+            60%      { transform: translate(-50%, -50%) scale(0.8); opacity: 0.9; }
+        }
+
+        /* 散落金粉粒子 */
+        .sparkles {
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle 3px at 15% 20%, rgba(255,240,160,1) 0%, transparent 70%),
+                radial-gradient(circle 4px at 72% 18%, rgba(255,220,120,0.95) 0%, transparent 65%),
+                radial-gradient(circle 2px at 38% 55%, rgba(255,245,180,1) 0%, transparent 60%),
+                radial-gradient(circle 5px at 85% 42%, rgba(255,200,100,0.9) 0%, transparent 72%),
+                radial-gradient(circle 3px at 22% 75%, rgba(255,230,140,0.95) 0%, transparent 68%),
+                radial-gradient(circle 4px at 58% 12%, rgba(255,240,155,0.9) 0%, transparent 70%),
+                radial-gradient(circle 2px at 92% 68%, rgba(255,220,130,1) 0%, transparent 65%),
+                radial-gradient(circle 5px at 8% 45%, rgba(255,200,110,0.85) 0%, transparent 60%),
+                radial-gradient(circle 3px at 45% 82%, rgba(255,235,150,0.95) 0%, transparent 72%),
+                radial-gradient(circle 4px at 68% 35%, rgba(255,210,115,0.9) 0%, transparent 68%),
+                radial-gradient(circle 2px at 32% 8%,  rgba(255,245,170,1) 0%, transparent 55%),
+                radial-gradient(circle 6px at 52% 48%, rgba(255,190,90,0.8) 0%, transparent 75%),
+                radial-gradient(circle 3px at 78% 82%, rgba(255,225,135,0.95) 0%, transparent 70%),
+                radial-gradient(circle 4px at 18% 35%, rgba(255,215,120,0.9) 0%, transparent 66%),
+                radial-gradient(circle 2px at 62% 72%, rgba(255,240,160,1) 0%, transparent 60%),
+                radial-gradient(circle 5px at 42% 28%, rgba(255,200,105,0.88) 0%, transparent 72%);
+            opacity: 0;
+            animation: sparklesPop 2.5s ease-out 0.2s forwards;
+        }
+
+        @keyframes sparklesPop {
+            0%   { opacity: 0; transform: scale(0.3); }
+            15%  { opacity: 1; transform: scale(1); }
+            60%  { opacity: 0.8; transform: scale(1.6); }
+            100% { opacity: 0; transform: scale(2.5); }
+        }
+
+        @keyframes zoomIntoScroll {
+            0%   { transform: scale(1); }
+            60%  { transform: scale(1.6); }
+            100% { transform: scale(2.8); opacity: 0.5; }
+        }
+
+        /* 御览宣纸 — 朱红镶边 + 云龙暗纹 */
+        .scroll-paper {
+            position: absolute;
+            inset: 8px 50px;
+            background:
+                /* 层5：云龙暗纹 */
+                url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='120'%3E%3Cpath d='M100 30 Q120 15 140 30 Q160 45 140 60 Q120 75 100 60 Q80 45 100 30Z' fill='none' stroke='rgba(180,150,100,0.10)' stroke-width='0.8'/%3E%3Ccircle cx='100' cy='30' r='4' fill='rgba(200,160,100,0.08)'/%3E%3Ccircle cx='140' cy='30' r='4' fill='rgba(200,160,100,0.08)'/%3E%3Cpath d='M100 60 Q110 70 120 60' fill='none' stroke='rgba(180,150,100,0.07)' stroke-width='0.6'/%3E%3C/svg%3E") 0 0/200px 120px,
+                /* 层4：绢丝纹理 */
+                url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect x='0' y='0' width='0.5' height='0.5' fill='rgba(160,130,90,0.05)'/%3E%3C/svg%3E") 0 0/4px 4px,
+                /* 层3：金粉微粒 */
+                url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Ccircle cx='20' cy='20' r='0.8' fill='rgba(200,170,100,0.07)'/%3E%3Ccircle cx='55' cy='40' r='0.6' fill='rgba(200,170,100,0.06)'/%3E%3Ccircle cx='65' cy='15' r='0.7' fill='rgba(200,170,100,0.05)'/%3E%3Ccircle cx='10' cy='60' r='0.5' fill='rgba(200,170,100,0.06)'/%3E%3C/svg%3E") 0 0/80px 80px,
+                /* 层2：朱红镶边绢底 */
+                linear-gradient(175deg,
+                    #4a1818 0%, #6b2020 3%, #fdf8ef 6%, #fbf3e4 20%,
+                    #f8edd6 50%, #fbf3e4 80%, #fdf8ef 94%, #6b2020 97%, #4a1818 100%),
+                /* 层1：明黄底 */
+                linear-gradient(180deg, #fef9ed 0%, #fdf4e0 30%, #fef8ea 60%, #fcf2dd 100%);
+            border-radius: 4px;
+            transform: scaleX(0);
+            transform-origin: center;
+            will-change: transform;
+            border: none;
+            box-shadow: inset 0 0 40px rgba(180,140,80,0.08);
+        }
+
+        /* 卷纸金线镶边 */
+        .scroll-paper::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border: 2px solid transparent;
+            border-image: linear-gradient(180deg,
+                rgba(180,140,70,0.5) 0%, rgba(220,180,100,0.7) 8%, rgba(180,140,70,0.3) 15%,
+                rgba(220,180,100,0.5) 50%,
+                rgba(180,140,70,0.3) 85%, rgba(220,180,100,0.7) 92%, rgba(180,140,70,0.5) 100%) 1;
+            border-radius: 4px;
+            pointer-events: none;
+        }
+        /* 边缘墨色渐变 */
+        .scroll-paper::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                linear-gradient(90deg,
+                    rgba(40,25,10,0.15) 0%, transparent 5%, transparent 95%, rgba(40,25,10,0.15) 100%),
+                linear-gradient(180deg,
+                    transparent 0%, rgba(80,50,30,0.04) 88%, rgba(60,35,20,0.10) 100%);
+            border-radius: 4px;
+            pointer-events: none;
+        }
+
+        @keyframes unfoldPaper {
+            0% {
+                transform: scaleX(0.03);
+                opacity: 0.2;
+            }
+            55% {
+                transform: scaleX(1.05);
+                opacity: 0.95;
+            }
+            75% {
+                transform: scaleX(0.97);
+                opacity: 1;
+            }
+            100% {
+                transform: scaleX(1);
+                opacity: 1;
+            }
+        }
+
+        /* 卷轴杆 - 紫檀御制 */
+        .scroll-left, .scroll-right {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 3;
+        }
+        /* 初始位置：两杆紧贴中心 */
+        .scroll-left  { left: calc(50% - 42px); }
+        .scroll-right { left: calc(50% + 2px); }
+
+        /* 鎏金轴帽 (上下两端) */
+        .scroll-rod-top, .scroll-rod-bottom {
+            width: 46px;
+            height: 22px;
+            background: linear-gradient(180deg,
+                #d4a843 0%, #f0d878 20%, #c9983a 40%,
+                #e8cc60 60%, #b8862e 80%, #a07028 100%);
+            border-radius: 12px;
+            box-shadow:
+                0 3px 8px rgba(0,0,0,0.3),
+                0 0 12px rgba(200,160,60,0.3),
+                inset 0 1px 2px rgba(255,240,200,0.4);
+            position: relative;
+        }
+        /* 轴帽装饰环 */
+        .scroll-rod-top::after, .scroll-rod-bottom::after {
+            content: '';
+            position: absolute;
+            bottom: 3px;
+            left: 4px;
+            right: 4px;
+            height: 3px;
+            background: rgba(160,110,30,0.55);
+            border-radius: 2px;
+        }
+        .scroll-rod-bottom {
+            background: linear-gradient(180deg,
+                #a07028 0%, #b8862e 20%, #e8cc60 40%,
+                #c9983a 60%, #f0d878 80%, #d4a843 100%);
+        }
+        .scroll-rod-bottom::after {
+            bottom: auto;
+            top: 3px;
+        }
+
+        /* 紫檀木轴身 */
+        .scroll-rod-body {
+            flex: 1;
+            width: 30px;
+            background: linear-gradient(90deg,
+                #2a1810 0%, #4a2c18 15%, #3d2212 30%,
+                #5c3820 50%, #3d2212 70%, #4a2c18 85%, #2a1810 100%);
+            border-radius: 8px;
+            margin: 4px 0;
+            box-shadow:
+                inset 0 0 18px rgba(0,0,0,0.35),
+                0 2px 4px rgba(0,0,0,0.2);
+            position: relative;
+        }
+        /* 紫檀木纹 */
+        .scroll-rod-body::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent 0px,
+                rgba(180,130,80,0.06) 2px,
+                transparent 4px,
+                rgba(200,150,90,0.04) 6px,
+                transparent 8px
+            );
+            border-radius: 8px;
+            pointer-events: none;
+        }
+
+        /* 左右轴：初始居中，JS动画统一驱动 */
+        .scroll-left, .scroll-right {
+            will-change: left;
+        }
+        .scroll-left  { left: 50%; }
+        .scroll-right { left: 50%; }
+
+        /* ========== 多层水墨山水背景系统 ========== */
+        body {
+            font-family: var(--font-body);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+            position: relative;
+            /* 底层：水墨山水渐变 */
+            background:
+                /* 层6：冰裂纹理 (顶层) */
+                url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cpath d='M0 40 L40 0 L80 40 L40 80 Z' fill='none' stroke='rgba(139,115,85,0.04)' stroke-width='0.5'/%3E%3Cpath d='M20 0 L20 80 M0 20 L80 20' stroke='rgba(139,115,85,0.03)' stroke-width='0.3'/%3E%3Ccircle cx='40' cy='40' r='1' fill='rgba(180,160,130,0.06)'/%3E%3C/svg%3E") 0 0/80px 80px,
+                /* 层5：云纹图案 */
+                url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='100'%3E%3Cpath d='M30 55 Q50 28 70 55 Q90 82 110 55 Q130 28 150 55' fill='none' stroke='rgba(180,150,110,0.10)' stroke-width='1.2'/%3E%3Ccircle cx='70' cy='53' r='5' fill='rgba(200,170,120,0.09)'/%3E%3Ccircle cx='110' cy='53' r='5' fill='rgba(200,170,120,0.09)'/%3E%3Cpath d='M80 70 Q90 62 100 70' fill='none' stroke='rgba(180,150,110,0.07)' stroke-width='0.8'/%3E%3C/svg%3E") 0 0/200px 100px,
+                /* 层4：绢纹纹理 */
+                url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect x='0' y='0' width='0.8' height='0.8' fill='rgba(139,115,85,0.03)'/%3E%3C/svg%3E") 0 0/4px 4px,
+                /* 层3：大团云纹 (稀疏大尺寸) */
+                url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='240'%3E%3Cpath d='M60 120 Q80 85 100 120 Q120 155 140 120 Q160 85 180 120' fill='none' stroke='rgba(180,140,100,0.06)' stroke-width='1.8'/%3E%3Ccircle cx='100' cy='118' r='8' fill='rgba(200,160,100,0.05)'/%3E%3Ccircle cx='140' cy='118' r='8' fill='rgba(200,160,100,0.05)'/%3E%3Cpath d='M240 60 Q260 25 280 60 Q300 95 320 60' fill='none' stroke='rgba(180,140,100,0.05)' stroke-width='1.5'/%3E%3Ccircle cx='280' cy='58' r='6' fill='rgba(200,160,100,0.04)'/%3E%3C/svg%3E") 0 0/360px 240px,
+                /* 层2：宣纸底纹渐变 */
+                linear-gradient(175deg,
+                    #f7f1e0 0%, #efe3cc 12%, #f5ecda 25%,
+                    #f2e6d0 45%, #f9f3e5 65%, #ece0c8 82%, #f4ead8 100%);
+            background-size: 80px 80px, 200px 100px, 4px 4px, 360px 240px, auto;
+            background-position: 0 0, 0 0, 0 0, 0 0, center;
+            animation: bgShift 35s ease-in-out infinite;
+        }
+
+        @keyframes bgShift {
+            0%, 100% { background-position: 0% 0%, 0% 0%, 0 0, 0% 0%, center; }
+            25% { background-position: 2% 3%, 1% 2%, 0 0, 3% 1%, center; }
+            50% { background-position: -1% 1%, 3% -1%, 0 0, -2% 3%, center; }
+            75% { background-position: 3% -2%, -2% 3%, 0 0, 1% -1%, center; }
+        }
+
+        /* 水墨光影层 */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            background:
+                /* 远山淡影 */
+                radial-gradient(ellipse 1400px 500px at 50% 95%, rgba(60,45,25,0.12) 0%, transparent 60%),
+                /* 中景墨晕 */
+                radial-gradient(ellipse 900px 400px at 30% 55%, rgba(70,50,30,0.06) 0%, transparent 65%),
+                radial-gradient(ellipse 700px 350px at 70% 40%, rgba(55,40,25,0.05) 0%, transparent 60%),
+                /* 顶部淡烟 */
+                radial-gradient(ellipse 1000px 300px at 50% 5%, rgba(100,80,55,0.06) 0%, transparent 70%);
+            animation: inkFlow 24s ease-in-out infinite;
+        }
+
+        @keyframes inkFlow {
+            0%, 100% { opacity: 0.7; }
+            30% { opacity: 1; }
+            60% { opacity: 0.55; }
+            85% { opacity: 0.85; }
+        }
+
+        /* 水墨浓淡点缀 */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            background:
+                /* 浓墨点 */
+                radial-gradient(ellipse 300px 200px at 18% 35%, rgba(45,30,18,0.07) 0%, transparent 85%),
+                /* 淡墨晕 */
+                radial-gradient(ellipse 350px 220px at 80% 70%, rgba(50,35,20,0.06) 0%, transparent 78%),
+                /* 焦墨点 */
+                radial-gradient(circle 120px at 55% 25%, rgba(40,28,15,0.05) 0%, transparent 85%),
+                /* 轻烟 */
+                radial-gradient(ellipse 400px 180px at 25% 80%, rgba(80,60,40,0.04) 0%, transparent 75%);
+            opacity: 0.7;
+            animation: inkFlow 28s ease-in-out 2s infinite;
+        }
+
+        /* ========== Canvas 粒子层 (增强) ========== */
+        #particleCanvas {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* ========== 底部山水剪影 ========== */
+        .mountain-silhouette {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 0;
+            pointer-events: none;
+            height: 260px;
+            opacity: 0.30;
+        }
+        .mountain-silhouette svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* 装饰容器 */
+        .bg-decorations {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* 篆刻印章 */
+        .seal-stamp {
+            position: fixed;
+            bottom: 40px;
+            right: 32px;
+            width: 100px;
+            height: 100px;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.70;
+            animation: sealReveal 2s ease 1s both, sealPulse 8s ease-in-out 3s infinite;
+        }
+        .seal-stamp svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        @keyframes sealReveal {
+            from { opacity: 0; transform: scale(0.7) rotate(-8deg); }
+            to   { opacity: 0.70; transform: scale(1) rotate(0deg); }
+        }
+        @keyframes sealPulse {
+            0%, 100% { opacity: 0.65; }
+            50% { opacity: 0.85; }
+        }
+
+        /* 角落装饰纹样 */
+        .corner-ornament {
+            position: fixed;
+            width: 70px;
+            height: 70px;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.55;
+            animation: cornerReveal 1.5s ease 1.5s both;
+        }
+        .corner-ornament svg {
+            width: 100%;
+            height: 100%;
+        }
+        .corner-tl { top: 20px; left: 20px; }
+        .corner-tr { top: 20px; right: 20px; }
+
+        @keyframes cornerReveal {
+            from { opacity: 0; }
+            to   { opacity: 0.55; }
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--paper-dark); }
+        ::-webkit-scrollbar-thumb { background: var(--bronze); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--bronze-dark); }
+
+        /* ========== 顶部装饰条 ========== */
+        .top-ornament {
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg,
+                transparent 0%, var(--gold) 15%, var(--vermillion) 30%,
+                var(--gold) 50%, var(--vermillion) 70%, var(--gold) 85%,
+                transparent 100%);
+            position: fixed;
+            top: 0;
+            z-index: 100;
+        }
+
+        /* ========== 主容器 ========== */
+        .main-container {
+            max-width: 1280px;
+            width: 92%;
+            margin: 0 auto 80px;
+            padding-top: 30px;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* ========== 头部 ========== */
+        .hero {
+            text-align: center;
+            padding: 40px 20px 30px;
+            position: relative;
+        }
+        .hero-badge {
+            display: inline-block;
+            font-family: var(--font-heading);
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--vermillion);
+            letter-spacing: 0.2em;
+            padding: 5px 18px;
+            border: 1px solid var(--vermillion-light);
+            border-radius: 40px;
+            margin-bottom: 20px;
+            background: rgba(181,52,58,0.04);
+        }
+        .hero h1 {
+            font-family: var(--font-display);
+            font-size: clamp(2.2rem, 4.5vw, 3.5rem);
+            font-weight: 400;
+            color: var(--ink-deep);
+            letter-spacing: 0.06em;
+            margin-bottom: 6px;
+            line-height: 1.3;
+        }
+        .hero h1 .accent { color: var(--vermillion); }
+        .hero .subtitle {
+            font-family: var(--font-heading);
+            font-size: 1rem;
+            color: var(--ink-muted);
+            letter-spacing: 0.12em;
+            font-weight: 400;
+            margin-bottom: 24px;
+        }
+        .hero-divider {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            max-width: 380px;
+            margin: 0 auto;
+        }
+        .hero-divider .line {
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+        }
+        .hero-divider .diamond {
+            width: 7px; height: 7px;
+            background: var(--vermillion);
+            transform: rotate(45deg);
+            opacity: 0.7;
+        }
+
+        /* ========== 精选轮播 ========== */
+        .carousel-section {
+            margin: 16px 0 36px;
+            position: relative;
+        }
+        .carousel-section .section-label {
+            font-family: var(--font-heading);
+            font-size: 0.82rem;
+            color: var(--vermillion);
+            letter-spacing: 0.14em;
+            text-align: center;
+            margin-bottom: 14px;
+        }
+        .carousel-wrap {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 21 / 7;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+            background: var(--paper-dark);
+        }
+        .carousel-track {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .carousel-slide {
+            min-width: 100%;
+            height: 100%;
+            position: relative;
+            cursor: pointer;
+            overflow: hidden;
+        }
+        .carousel-slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.8s ease;
+        }
+        .carousel-slide:hover img {
+            transform: scale(1.04);
+        }
+        .carousel-slide .slide-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg,
+                rgba(26,20,16,0.15) 0%,
+                transparent 35%,
+                rgba(26,20,16,0.6) 75%,
+                rgba(26,20,16,0.85) 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 40px 44px;
+            pointer-events: none;
+        }
+        .carousel-slide .slide-location {
+            font-family: var(--font-heading);
+            font-size: 0.8rem;
+            color: var(--gold-light);
+            letter-spacing: 0.14em;
+            margin-bottom: 6px;
+        }
+        .carousel-slide .slide-name {
+            font-family: var(--font-display);
+            font-size: clamp(1.6rem, 3vw, 2.4rem);
+            font-weight: 400;
+            color: #fff;
+            letter-spacing: 0.06em;
+            margin-bottom: 4px;
+        }
+        .carousel-slide .slide-desc {
+            font-family: var(--font-heading);
+            font-size: 0.9rem;
+            color: rgba(255,255,255,0.78);
+            letter-spacing: 0.04em;
+        }
+
+        /* 轮播导航 */
+        .carousel-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(8px);
+            color: #fff;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .carousel-arrow:hover {
+            background: rgba(255,255,255,0.4);
+            transform: translateY(-50%) scale(1.08);
+        }
+        .carousel-arrow.prev { left: 16px; }
+        .carousel-arrow.next { right: 16px; }
+
+        .carousel-dots {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 16px;
+        }
+        .carousel-dots .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--paper-dark);
+            cursor: pointer;
+            transition: all 0.35s;
+            border: 2px solid transparent;
+        }
+        .carousel-dots .dot.active {
+            background: var(--vermillion);
+            border-color: var(--vermillion);
+            box-shadow: 0 0 0 4px rgba(181,52,58,0.15);
+            transform: scale(1.2);
+        }
+        .carousel-dots .dot:hover {
+            background: var(--vermillion-light);
+        }
+
+        /* ========== 筛选标签 ========== */
+        .filter-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 32px;
+            padding: 8px 0;
+        }
+        .filter-label {
+            font-family: var(--font-heading);
+            font-size: 0.85rem;
+            color: var(--ink-muted);
+            letter-spacing: 0.08em;
+            margin-right: 4px;
+        }
+        .filter-tab {
+            font-family: var(--font-heading);
+            font-size: 0.84rem;
+            font-weight: 600;
+            padding: 7px 20px;
+            border-radius: 28px;
+            border: 1.5px solid var(--paper-dark);
+            background: rgba(255,255,255,0.45);
+            color: var(--ink-muted);
+            cursor: pointer;
+            transition: all 0.3s;
+            letter-spacing: 0.05em;
+            backdrop-filter: blur(4px);
+        }
+        .filter-tab:hover {
+            border-color: var(--gold);
+            color: var(--ink-body);
+            background: rgba(255,255,255,0.7);
+        }
+        .filter-tab.active {
+            background: var(--vermillion-deep);
+            color: #fff;
+            border-color: var(--vermillion-deep);
+            box-shadow: 0 3px 14px rgba(181,52,58,0.2);
+        }
+        .filter-count {
+            font-size: 0.7rem;
+            opacity: 0.75;
+            margin-left: 2px;
+        }
+
+        /* ========== 遗址网格 ========== */
+        .heritage-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px 26px;
+            padding: 6px 0 40px;
+        }
+
+        .heritage-card {
+            background: rgba(255,255,255,0.7);
+            backdrop-filter: blur(10px);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            border: 1px solid rgba(180,160,130,0.22);
+            animation: cardReveal 0.7s ease both;
+            cursor: default;
+        }
+        .heritage-card.filter-hidden {
+            display: none;
+        }
+        .heritage-card:hover {
+            transform: translateY(-7px);
+            box-shadow: var(--shadow-lg), var(--shadow-gold);
+            border-color: rgba(201,162,78,0.5);
+            background: rgba(255,255,255,0.85);
+        }
+
+        .heritage-card::after {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, var(--gold), var(--vermillion-light), var(--gold));
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.45s ease;
+            filter: blur(6px);
+        }
+        .heritage-card:hover::after { opacity: 0.16; }
+
+        @keyframes cardReveal {
+            from { opacity: 0; transform: translateY(36px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 卡片图片 */
+        .card-image-wrap {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 4 / 2.6;
+            overflow: hidden;
+            cursor: pointer;
+            background: var(--paper-dark);
+        }
+        .card-image-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        .heritage-card:hover .card-image-wrap img {
+            transform: scale(1.06);
+        }
+        .card-image-wrap::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg,
+                transparent 55%, rgba(26,20,16,0.02) 75%, rgba(26,20,16,0.2) 100%);
+            z-index: 2;
+            pointer-events: none;
+            transition: opacity 0.4s;
+        }
+        .heritage-card:hover .card-image-wrap::before { opacity: 0.8; }
+
+        .location-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 3;
+            font-family: var(--font-heading);
+            font-size: 0.73rem;
+            font-weight: 600;
+            color: var(--cream);
+            background: rgba(26,20,16,0.6);
+            backdrop-filter: blur(8px);
+            padding: 4px 13px;
+            border-radius: 20px;
+            letter-spacing: 0.06em;
+            pointer-events: none;
+            transition: all 0.4s;
+        }
+        .heritage-card:hover .location-badge {
+            background: var(--vermillion);
+            color: #fff;
+        }
+
+        .click-hint {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%) translateY(6px);
+            z-index: 3;
+            font-family: var(--font-heading);
+            font-size: 0.76rem;
+            color: #fff;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(6px);
+            padding: 5px 15px;
+            border-radius: 20px;
+            opacity: 0;
+            transition: all 0.35s ease;
+            pointer-events: none;
+            white-space: nowrap;
+            letter-spacing: 0.04em;
+        }
+        .heritage-card:hover .click-hint {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* 卡片信息 */
+        .card-info {
+            padding: 16px 18px 20px;
+            position: relative;
+        }
+        .card-info::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 18px; right: 18px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            opacity: 0.45;
+        }
+        .card-name {
+            font-family: var(--font-heading);
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--ink-deep);
+            margin-bottom: 5px;
+            letter-spacing: 0.04em;
+        }
+        .card-desc {
+            font-size: 0.83rem;
+            color: var(--ink-muted);
+            line-height: 1.55;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .card-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            opacity: 0.5;
+            transition: opacity 0.3s;
+        }
+        .heritage-card:hover .card-actions { opacity: 1; }
+        .card-actions button {
+            font-family: var(--font-body);
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 4px 13px;
+            border-radius: 16px;
+            border: 1px solid var(--paper-dark);
+            background: var(--paper);
+            color: var(--ink-muted);
+            cursor: pointer;
+            transition: all 0.25s;
+        }
+        .card-actions button:hover {
+            background: var(--ink-deep);
+            color: var(--cream);
+            border-color: var(--ink-deep);
+        }
+        .card-actions .btn-delete:hover {
+            background: var(--vermillion);
+            border-color: var(--vermillion);
+        }
+
+        /* 无匹配提示 */
+        .no-match {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 48px 20px;
+            font-family: var(--font-heading);
+            color: var(--ink-muted);
+            font-size: 0.95rem;
+            letter-spacing: 0.06em;
+            animation: cardReveal 0.5s ease;
+        }
+
+        /* ========== 操作栏 ========== */
+        .action-bar {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            padding: 16px 0 8px;
+        }
+        .btn-primary {
+            font-family: var(--font-heading);
+            font-size: 0.9rem;
+            font-weight: 600;
+            padding: 10px 30px;
+            border-radius: 50px;
+            border: none;
+            cursor: pointer;
+            letter-spacing: 0.06em;
+            transition: all 0.3s;
+            background: var(--ink-deep);
+            color: var(--cream);
+            box-shadow: var(--shadow-sm);
+        }
+        .btn-primary:hover {
+            background: var(--vermillion-deep);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+        .btn-secondary {
+            font-family: var(--font-heading);
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 9px 26px;
+            border-radius: 50px;
+            border: 1.5px solid var(--bronze);
+            background: transparent;
+            color: var(--bronze-dark);
+            cursor: pointer;
+            letter-spacing: 0.05em;
+            transition: all 0.3s;
+        }
+        .btn-secondary:hover {
+            background: var(--bronze);
+            color: var(--cream);
+            border-color: var(--bronze);
+        }
+        .footer-note {
+            text-align: center;
+            padding: 8px 0 30px;
+            font-family: var(--font-heading);
+            font-size: 0.76rem;
+            color: var(--ink-muted);
+            letter-spacing: 0.05em;
+        }
+
+        /* ========== 模态框 ========== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(26,20,16,0.5);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-overlay.active { display: flex; }
+
+        .modal-panel {
+            background: var(--cream);
+            max-width: 500px;
+            width: 92%;
+            border-radius: var(--radius-lg);
+            padding: 28px 26px 32px;
+            box-shadow: var(--shadow-lg);
+            animation: modalIn 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            border: 1px solid rgba(180,160,130,0.3);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        @keyframes modalIn {
+            from { opacity: 0; transform: translateY(24px) scale(0.96); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .modal-panel h3 {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            font-weight: 400;
+            color: var(--ink-deep);
+            margin-bottom: 20px;
+            letter-spacing: 0.05em;
+            text-align: center;
+        }
+        .modal-panel label {
+            display: block;
+            font-family: var(--font-heading);
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--ink-muted);
+            margin: 12px 0 4px;
+            letter-spacing: 0.04em;
+        }
+        .modal-panel input,
+        .modal-panel textarea {
+            width: 100%;
+            padding: 10px 15px;
+            border-radius: 12px;
+            border: 1.5px solid var(--paper-dark);
+            background: var(--paper);
+            font-family: var(--font-body);
+            font-size: 0.88rem;
+            color: var(--ink-body);
+            transition: border-color 0.25s;
+            outline: none;
+        }
+        .modal-panel input:focus,
+        .modal-panel textarea:focus {
+            border-color: var(--gold);
+            background: var(--cream);
+        }
+        .modal-panel textarea { resize: vertical; min-height: 70px; border-radius: 14px; }
+        .modal-panel .img-preview {
+            width: 80px; height: 52px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-top: 6px;
+            border: 1px solid var(--paper-dark);
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 22px;
+        }
+        .modal-buttons button {
+            font-family: var(--font-heading);
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 8px 22px;
+            border-radius: 40px;
+            border: none;
+            cursor: pointer;
+            letter-spacing: 0.04em;
+            transition: all 0.25s;
+        }
+        .btn-save { background: var(--vermillion-deep); color: #fff; }
+        .btn-save:hover { background: var(--vermillion); }
+        .btn-cancel { background: var(--paper-dark); color: var(--ink-body); }
+        .btn-cancel:hover { background: #d4c9b5; }
+
+        /* ========== 响应式 ========== */
+        @media (max-width: 1100px) {
+            .heritage-grid { grid-template-columns: repeat(3, 1fr); gap: 22px 16px; }
+            .carousel-wrap { aspect-ratio: 21 / 8; }
+        }
+        @media (max-width: 820px) {
+            .heritage-grid { grid-template-columns: repeat(2, 1fr); gap: 20px 14px; }
+            .carousel-wrap { aspect-ratio: 16 / 7; }
+            .carousel-slide .slide-overlay { padding: 24px 28px; }
+            .carousel-slide .slide-name { font-size: 1.3rem; }
+            .hero h1 { font-size: 1.8rem; }
+        }
+        @media (max-width: 520px) {
+            .heritage-grid { grid-template-columns: 1fr 1fr; gap: 14px 10px; }
+            .carousel-wrap { aspect-ratio: 4 / 3; }
+            .carousel-slide .slide-overlay { padding: 16px 20px; }
+            .carousel-slide .slide-name { font-size: 1.1rem; }
+            .card-info { padding: 10px 11px 14px; }
+            .card-name { font-size: 0.95rem; }
+            .card-desc { font-size: 0.72rem; }
+            .location-badge { font-size: 0.65rem; padding: 3px 9px; top: 8px; right: 8px; }
+            .filter-tab { font-size: 0.75rem; padding: 5px 14px; }
+            .hero { padding: 24px 8px 18px; }
+            .hero h1 { font-size: 1.5rem; }
+        }
+        @media (max-width: 380px) {
+            .heritage-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ====== 卷轴开场动画 ====== -->
+<div id="scrollIntro">
+    <div class="scroll-stage">
+        <!-- 墨扩散背景 -->
+        <div class="ink-spread"></div>
+        <!-- 诗句 -->
+        <div class="scroll-poem">
+            <span class="poem-line">惟楚有材</span>
+            <span class="poem-line">于斯为盛</span>
+        </div>
+        <!-- 卷轴结构 -->
+        <div class="scroll-wrapper">
+            <div class="scroll-left">
+                <div class="scroll-rod-top"></div>
+                <div class="scroll-rod-body"></div>
+                <div class="scroll-rod-bottom"></div>
+            </div>
+            <div class="scroll-right">
+                <div class="scroll-rod-top"></div>
+                <div class="scroll-rod-body"></div>
+                <div class="scroll-rod-bottom"></div>
+            </div>
+            <div class="scroll-paper"></div>
+        </div>
+        <!-- 金光桃花源：视角入卷后发散 -->
+        <div class="golden-burst">
+            <div class="light-rays"></div>
+            <div class="shockwave"></div>
+            <div class="shockwave"></div>
+            <div class="shockwave"></div>
+            <div class="glow-core"></div>
+            <div class="sparkles"></div>
+        </div>
+    </div>
+</div>
+
+<!-- 顶部装饰条 -->
+<div class="top-ornament"></div>
+
+<!-- 粒子动画画布 -->
+<canvas id="particleCanvas"></canvas>
+
+<!-- 装饰层：山水剪影 + 竹叶 + 印章 -->
+<div class="bg-decorations">
+    <!-- 山水剪影 -->
+    <div class="mountain-silhouette">
+        <svg viewBox="0 0 1440 260" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="mtGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#c9a24e" stop-opacity="0" />
+                    <stop offset="30%" stop-color="#b8a080" stop-opacity="0.25" />
+                    <stop offset="65%" stop-color="#8b7355" stop-opacity="0.42" />
+                    <stop offset="100%" stop-color="#5c4935" stop-opacity="0.55" />
+                </linearGradient>
+                <linearGradient id="mtGrad2" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#8b7355" stop-opacity="0" />
+                    <stop offset="50%" stop-color="#8b7355" stop-opacity="0.18" />
+                    <stop offset="100%" stop-color="#4a3828" stop-opacity="0.38" />
+                </linearGradient>
+            </defs>
+            <!-- 远山 -->
+            <path d="M0,260 L0,195 Q50,170 100,180 Q150,190 200,165 Q250,140 300,155 Q350,170 400,140
+                Q450,110 500,128 Q550,145 600,120 Q650,95 700,110 Q750,125 800,100
+                Q850,75 900,92 Q950,108 1000,85 Q1050,62 1100,78 Q1150,94 1200,75
+                Q1250,56 1300,72 Q1350,88 1400,70 Q1420,62 1440,65 L1440,260 Z"
+                fill="url(#mtGrad)" />
+            <!-- 近山 -->
+            <path d="M0,260 L0,210 Q55,190 110,200 Q165,210 220,185 Q275,160 330,175
+                Q385,190 440,165 Q495,140 550,155 Q605,170 660,145
+                Q715,120 770,135 Q825,150 880,125 Q935,100 990,115
+                Q1045,130 1100,108 Q1155,86 1210,102 Q1265,118 1320,100
+                Q1375,82 1410,92 L1440,88 L1440,260 Z"
+                fill="url(#mtGrad2)" />
+            <!-- 竹叶剪影 (左侧) -->
+            <g transform="translate(80,155)" opacity="0.28">
+                <line x1="0" y1="0" x2="0" y2="-85" stroke="#5c4935" stroke-width="2.5"/>
+                <path d="M0,-85 Q12,-100 22,-92 Q14,-82 0,-85" fill="#5c4935"/>
+                <path d="M0,-85 Q-14,-98 -22,-88 Q-12,-80 0,-85" fill="#5c4935"/>
+                <path d="M0,-65 Q10,-78 18,-70 Q8,-62 0,-65" fill="#5c4935"/>
+                <path d="M0,-65 Q-12,-76 -18,-66 Q-8,-58 0,-65" fill="#5c4935"/>
+                <path d="M0,-45 Q8,-56 15,-48 Q6,-42 0,-45" fill="#5c4935"/>
+                <path d="M0,-45 Q-10,-54 -14,-44 Q-6,-38 0,-45" fill="#5c4935"/>
+            </g>
+            <!-- 竹叶剪影 (右侧) -->
+            <g transform="translate(1320,140)" opacity="0.22">
+                <line x1="0" y1="0" x2="0" y2="-70" stroke="#5c4935" stroke-width="2"/>
+                <path d="M0,-70 Q10,-82 18,-74 Q8,-66 0,-70" fill="#5c4935"/>
+                <path d="M0,-70 Q-12,-80 -16,-70 Q-8,-64 0,-70" fill="#5c4935"/>
+                <path d="M0,-50 Q8,-60 14,-52 Q6,-46 0,-50" fill="#5c4935"/>
+                <path d="M0,-50 Q-10,-58 -13,-48 Q-5,-44 0,-50" fill="#5c4935"/>
+            </g>
+            <!-- 远飞鸟群 -->
+            <g opacity="0.15" fill="none" stroke="#3d3226" stroke-width="1.2">
+                <path d="M320,80 Q325,75 330,80 Q335,75 340,80"/>
+                <path d="M350,72 Q354,68 358,72 Q362,68 366,72"/>
+                <path d="M335,88 Q339,84 343,88 Q347,84 351,88"/>
+            </g>
+        </svg>
+    </div>
+
+    <!-- 篆刻印章装饰 (右下角) -->
+    <div class="seal-stamp">
+        <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <rect x="8" y="8" width="104" height="104" rx="6" fill="none" stroke="rgba(181,52,58,0.38)" stroke-width="3"/>
+            <rect x="18" y="18" width="84" height="84" rx="3" fill="none" stroke="rgba(181,52,58,0.22)" stroke-width="1.2"/>
+            <text x="60" y="55" text-anchor="middle" font-family="'Noto Serif SC','SimSun',serif"
+                  font-size="28" fill="rgba(181,52,58,0.45)" font-weight="900">湖湘</text>
+            <text x="60" y="85" text-anchor="middle" font-family="'Noto Serif SC','SimSun',serif"
+                  font-size="16" fill="rgba(181,52,58,0.32)" font-weight="600">文脉</text>
+        </svg>
+    </div>
+
+    <!-- 角落装饰纹样 (左上) -->
+    <div class="corner-ornament corner-tl">
+        <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+            <rect x="4" y="4" width="72" height="72" rx="8" fill="none" stroke="rgba(201,162,78,0.15)" stroke-width="1.5"/>
+            <path d="M16,16 L28,16 L28,28" fill="none" stroke="rgba(201,162,78,0.2)" stroke-width="1.5"/>
+            <path d="M16,64 L28,64 L28,52" fill="none" stroke="rgba(201,162,78,0.2)" stroke-width="1.5"/>
+            <path d="M64,16 L52,16 L52,28" fill="none" stroke="rgba(201,162,78,0.2)" stroke-width="1.5"/>
+            <path d="M64,64 L52,64 L52,52" fill="none" stroke="rgba(201,162,78,0.2)" stroke-width="1.5"/>
+            <circle cx="40" cy="40" r="3" fill="rgba(201,162,78,0.18)"/>
+            <circle cx="40" cy="40" r="12" fill="none" stroke="rgba(201,162,78,0.10)" stroke-width="0.8"/>
+        </svg>
+    </div>
+    <div class="corner-ornament corner-tr">
+        <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+            <rect x="4" y="4" width="72" height="72" rx="8" fill="none" stroke="rgba(201,162,78,0.15)" stroke-width="1.5"/>
+            <path d="M16,16 L28,16 L28,28" fill="none" stroke="rgba(201,162,78,0.2)" stroke-width="1.5"/>
+            <path d="M16,64 L28,64 L28,52" fill="none" stroke="rgba(201,162,78,0.2)" stroke-width="1.5"/>
+            <path d="M64,16 L52,16 L52,28" fill="none" stroke="rgba(201,162,78,0.2)" stroke-width="1.5"/>
+            <path d="M64,64 L52,64 L52,52" fill="none" stroke="rgba(201,162,78,0.2)" stroke-width="1.5"/>
+            <circle cx="40" cy="40" r="3" fill="rgba(201,162,78,0.18)"/>
+            <circle cx="40" cy="40" r="12" fill="none" stroke="rgba(201,162,78,0.10)" stroke-width="0.8"/>
+        </svg>
+    </div>
+</div>
+
+<div class="main-container">
+    <!-- ===== 头部 ===== -->
+    <header class="hero">
+        <div class="hero-badge">HUNAN · CULTURAL HERITAGE</div>
+        <h1>湖湘<span class="accent">文脉</span> · 遗址风华</h1>
+        <p class="subtitle">探 寻 千 年 文 化 根 脉  ·  感 受 湖 湘 大 地 精 神</p>
+        <div class="hero-divider">
+            <span class="line"></span><span class="diamond"></span>
+            <span class="line"></span><span class="diamond"></span>
+            <span class="line"></span>
+        </div>
+    </header>
+
+    <!-- ===== 精选轮播 ===== -->
+    <div class="carousel-section">
+        <div class="section-label">✦ 精 选 推 荐 ✦</div>
+        <div class="carousel-wrap" id="carouselWrap">
+            <div class="carousel-track" id="carouselTrack"></div>
+            <button class="carousel-arrow prev" id="carouselPrev" title="上一个">◂</button>
+            <button class="carousel-arrow next" id="carouselNext" title="下一个">▸</button>
+        </div>
+        <div class="carousel-dots" id="carouselDots"></div>
+    </div>
+
+    <!-- ===== 城市筛选 ===== -->
+    <div class="filter-section" id="filterSection">
+        <span class="filter-label">🏙️ 筛选：</span>
+    </div>
+
+    <!-- ===== 遗址网格 ===== -->
+    <div id="heritageGrid" class="heritage-grid"></div>
+
+    <!-- ===== 操作按钮 ===== -->
+    <div class="action-bar">
+        <button id="addBtn" class="btn-primary">＋ 添加遗址</button>
+        <button id="scrollTopBtn" class="btn-secondary">↑ 回到顶部</button>
+    </div>
+
+    <div class="footer-note">
+        点击遗址图片 · 进入详情页浏览 | 轮播自动切换 · 城市标签筛选 | 所有内容支持编辑与同步
+    </div>
+</div>
+
+<!-- ===== 编辑模态框 ===== -->
+<div id="editModal" class="modal-overlay">
+    <div class="modal-panel">
+        <h3 id="modalTitle">编辑遗址</h3>
+        <label>遗址名称</label>
+        <input type="text" id="inputName" placeholder="如：岳麓书院" autocomplete="off">
+        <label>所在地</label>
+        <input type="text" id="inputLocation" placeholder="如：长沙" autocomplete="off">
+        <label>简短描述</label>
+        <input type="text" id="inputShortDesc" placeholder="一句话概括遗址特色" autocomplete="off">
+        <label>图片URL</label>
+        <input type="text" id="inputImgUrl" placeholder="输入网络图片地址" autocomplete="off">
+        <img id="imgPreview" class="img-preview" style="display:none;" alt="预览">
+        <label>详细介绍</label>
+        <textarea id="inputDetail" rows="3" placeholder="遗址的历史背景、文化价值..."></textarea>
+        <div class="modal-buttons">
+            <button class="btn-cancel" id="modalCancel">取消</button>
+            <button class="btn-save" id="modalSave">保存</button>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    // ==================== 遗址数据 ====================
+    const defaultSites = [
+        {
+            id: 1, name: '岳麓书院', location: '长沙',
+            shortDesc: '千年学府，中国四大书院之一',
+            imgUrl: 'https://picsum.photos/seed/yuelu/800/520',
+            detailContent: '岳麓书院位于长沙岳麓山下，始建于北宋开宝九年（公元976年），历经宋、元、明、清各代，是中国现存规模最大、保存最完好的书院建筑群。书院秉承"实事求是"的治学精神，培养了大批经世致用的人才，被誉为"千年学府"。现存建筑多为明清遗构，包括大门、二门、讲堂、半学斋、教学斋、百泉轩、御书楼、文庙等。',
+            featured: true
+        },
+        {
+            id: 2, name: '岳阳楼', location: '岳阳',
+            shortDesc: '洞庭天下水，岳阳天下楼',
+            imgUrl: 'https://picsum.photos/seed/yueyang/800/520',
+            detailContent: '岳阳楼位于岳阳城西的洞庭湖畔，与黄鹤楼、滕王阁并称"江南三大名楼"。始建于东汉末年，现存建筑为清光绪年间重建。北宋范仲淹的《岳阳楼记》中"先天下之忧而忧，后天下之乐而乐"的名句，使岳阳楼名扬天下。楼高三层，纯木结构，盔顶式楼阁造型独特。',
+            featured: true
+        },
+        {
+            id: 3, name: '凤凰古城', location: '湘西',
+            shortDesc: '中国最美小城，苗族风情画卷',
+            imgUrl: 'https://picsum.photos/seed/fenghuang/800/520',
+            detailContent: '凤凰古城位于湘西土家族苗族自治州，始建于清康熙年间，至今保留着明清时期的特色民居建筑和石板街道。沱江穿城而过，两岸吊脚楼鳞次栉比，古城墙、虹桥、沈从文故居等历史遗迹散布其中。这里是苗族、土家族文化的汇聚之地，被誉为"中国最美丽的小城"。',
+            featured: true
+        },
+        {
+            id: 4, name: '张家界武陵源', location: '张家界',
+            shortDesc: '世界自然遗产，砂岩峰林的奇迹',
+            imgUrl: 'https://picsum.photos/seed/zhangjiajie/800/520',
+            detailContent: '武陵源风景名胜区位于张家界市，1992年被列入《世界自然遗产名录》。这里以独特的石英砂岩峰林地貌闻名于世，三千多座石峰拔地而起，峡谷幽深，溪流潺潺。核心景区包括张家界国家森林公园、天子山、索溪峪、杨家界等。电影《阿凡达》中的悬浮山灵感即来源于此。',
+            featured: true
+        },
+        {
+            id: 5, name: '韶山毛泽东故居', location: '湘潭',
+            shortDesc: '伟人故里，中国红色革命圣地',
+            imgUrl: 'https://picsum.photos/seed/shaoshan/800/520',
+            detailContent: '韶山位于湘潭市，是毛泽东同志的故乡。故居为土木结构的凹字形建筑，坐南朝北，1893年毛泽东在此诞生并度过少年时代。现为全国重点文物保护单位和爱国主义教育基地。景区还包括毛泽东纪念馆、滴水洞、毛泽东广场等。',
+            featured: false
+        },
+        {
+            id: 6, name: '南岳衡山', location: '衡阳',
+            shortDesc: '五岳独秀，佛道共存的宗教圣地',
+            imgUrl: 'https://picsum.photos/seed/hengshan/800/520',
+            detailContent: '衡山为中国五岳之一的"南岳"，位于衡阳市境内。主峰祝融峰海拔1300米，以"秀"著称。衡山是佛道两教共存的名山，山中有南岳大庙、祝圣寺、方广寺等众多古刹。南岳大庙是中国南方规模最大的宫殿式古建筑群，有"江南第一庙"之称。',
+            featured: false
+        },
+        {
+            id: 7, name: '马王堆汉墓', location: '长沙',
+            shortDesc: '震惊世界的汉代考古大发现',
+            imgUrl: 'https://picsum.photos/seed/mawangdui/800/520',
+            detailContent: '马王堆汉墓位于长沙市区，是西汉初期长沙国丞相利苍及其家属的墓葬。1972-1974年发掘出土了保存完好的女尸（辛追夫人）、素纱禅衣、帛书帛画、漆器等三千余件珍贵文物，震惊世界考古界。辛追夫人遗体历经2100余年不腐，堪称世界考古史上的奇迹。',
+            featured: true
+        },
+        {
+            id: 8, name: '橘子洲头', location: '长沙',
+            shortDesc: '湘江之心，伟人诗篇中的壮丽画卷',
+            imgUrl: 'https://picsum.photos/seed/juzizhou/800/520',
+            detailContent: '橘子洲位于长沙市区湘江中心，是湘江下游最大的冲积沙洲，绵延十余里。毛泽东青年时期常在此游泳散步，写下了脍炙人口的《沁园春·长沙》。洲头矗立着毛泽东青年艺术雕塑，高32米，气势恢宏。洲上绿树成荫，四季花香，是长沙的城市名片。',
+            featured: false
+        },
+        {
+            id: 9, name: '洞庭湖', location: '岳阳',
+            shortDesc: '八百里洞庭，涵养湖湘的鱼米之乡',
+            imgUrl: 'https://picsum.photos/seed/dongting/800/520',
+            detailContent: '洞庭湖位于湖南北部，是中国第二大淡水湖，古称"云梦泽"。湖区面积约2600平方公里，烟波浩渺，气象万千。洞庭湖是长江重要的调蓄湖泊，也是中国重要的湿地生态系统。湖畔的君山岛以"洞庭山"之名见于古籍，产君山银针茶。历代文人墨客均在此留下千古名篇。',
+            featured: false
+        },
+        {
+            id: 10, name: '湖南省博物馆', location: '长沙',
+            shortDesc: '湖湘文化宝库，国宝级文物荟萃',
+            imgUrl: 'https://picsum.photos/seed/hunanmuseum/800/520',
+            detailContent: '湖南省博物馆位于长沙市，是湖南最大的综合性历史艺术博物馆。馆藏文物18万余件，以马王堆汉墓出土文物、商周青铜器、楚国文物、历代陶瓷书画等最具特色。镇馆之宝包括辛追夫人遗体、素纱禅衣、T形帛画、皿方罍等。新馆建筑设计融合现代与传统文化元素。',
+            featured: false
+        }
+    ];
+
+    let sites = [];
+    let nextId = 11;
+    let editingId = null;
+    let currentFilter = '全部';
+    let carouselIndex = 0;
+    let carouselTimer = null;
+
+    // ==================== 粒子动画背景 ====================
+    function initParticles() {
+        const canvas = document.getElementById('particleCanvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        const maxParticles = 100;
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        class Particle {
+            constructor() {
+                this.reset(true);
+            }
+            reset(initial) {
+                this.x = Math.random() * canvas.width;
+                this.y = initial ? Math.random() * canvas.height : canvas.height + 30;
+                this.size = Math.random() * 2.2 + 1.2;
+                this.speedY = Math.random() * 0.5 + 0.12;
+                this.speedX = (Math.random() - 0.5) * 0.35;
+                this.wobble = Math.random() * Math.PI * 2;
+                this.wobbleSpeed = (Math.random() - 0.5) * 0.02;
+                this.opacity = Math.random() * 0.55 + 0.18;
+                this.fadeSpeed = Math.random() * 0.0025 + 0.0015;
+                this.typeRand = Math.random();
+                // 40% 金粉, 25% 朱砂, 20% 玉色, 15% 花瓣
+                if (this.typeRand < 0.40) this.type = 'gold';
+                else if (this.typeRand < 0.65) this.type = 'vermillion';
+                else if (this.typeRand < 0.85) this.type = 'jade';
+                else this.type = 'petal';
+                this.rotation = Math.random() * Math.PI * 2;
+                this.rotSpeed = (Math.random() - 0.5) * 0.015;
+            }
+            update() {
+                this.y -= this.speedY;
+                this.wobble += this.wobbleSpeed;
+                this.x += this.speedX + Math.sin(this.wobble) * 0.3;
+                this.rotation += this.rotSpeed;
+                this.opacity -= this.fadeSpeed;
+                if (this.y < -30 || this.opacity <= 0) this.reset(false);
+            }
+            draw(ctx) {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                ctx.globalAlpha = this.opacity;
+
+                switch(this.type) {
+                    case 'gold':
+                        // 金色菱形粒子
+                        ctx.fillStyle = '#e0c878';
+                        ctx.beginPath();
+                        ctx.moveTo(0, -this.size);
+                        ctx.lineTo(this.size * 0.7, 0);
+                        ctx.lineTo(0, this.size);
+                        ctx.lineTo(-this.size * 0.7, 0);
+                        ctx.closePath();
+                        ctx.fill();
+                        // 光晕
+                        if (this.opacity > 0.15) {
+                            ctx.fillStyle = `rgba(240,210,140,${this.opacity * 0.15})`;
+                            ctx.beginPath();
+                            ctx.arc(0, 0, this.size * 3, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                        break;
+                    case 'vermillion':
+                        // 朱砂圆点
+                        ctx.fillStyle = '#c45a50';
+                        ctx.beginPath();
+                        ctx.arc(0, 0, this.size * 0.8, 0, Math.PI * 2);
+                        ctx.fill();
+                        if (this.opacity > 0.2) {
+                            ctx.fillStyle = `rgba(200,80,60,${this.opacity * 0.2})`;
+                            ctx.beginPath();
+                            ctx.arc(0, 0, this.size * 2.2, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                        break;
+                    case 'jade':
+                        // 玉色方形粒子
+                        ctx.fillStyle = '#9bb8a8';
+                        ctx.fillRect(-this.size * 0.5, -this.size * 0.5, this.size, this.size);
+                        break;
+                    case 'petal':
+                        // 花瓣形粒子 (椭圆)
+                        ctx.fillStyle = `rgba(220,180,160,${this.opacity})`;
+                        ctx.beginPath();
+                        ctx.ellipse(0, 0, this.size * 1.3, this.size * 0.5, 0, 0, Math.PI * 2);
+                        ctx.fill();
+                        break;
+                }
+                ctx.restore();
+            }
+        }
+
+        for (let i = 0; i < maxParticles; i++) {
+            particles.push(new Particle());
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.update();
+                p.draw(ctx);
+            });
+            requestAnimationFrame(animate);
+        }
+        animate();
+    }
+
+    // ==================== 数据加载 ====================
+    function loadSites() {
+        const stored = localStorage.getItem('hunanHeritageSites');
+        if (stored) {
+            try {
+                sites = JSON.parse(stored);
+                if (sites.length > 0) {
+                    nextId = Math.max(...sites.map(s => s.id)) + 1;
+                    return;
+                }
+            } catch(e) {}
+        }
+        sites = JSON.parse(JSON.stringify(defaultSites));
+        saveSites();
+    }
+
+    function saveSites() {
+        localStorage.setItem('hunanHeritageSites', JSON.stringify(sites));
+    }
+
+    // ==================== CRUD ====================
+    function addSite(name, location, shortDesc, imgUrl, detailContent) {
+        const site = {
+            id: nextId++,
+            name: name || '新遗址',
+            location: location || '湖南',
+            shortDesc: shortDesc || '暂无描述',
+            imgUrl: imgUrl || `https://picsum.photos/seed/site${nextId}/800/520`,
+            detailContent: detailContent || '暂无详细介绍。',
+            featured: false
+        };
+        sites.push(site);
+        saveSites();
+        renderAll();
+        return site;
+    }
+
+    function updateSite(id, data) {
+        const idx = sites.findIndex(s => s.id === id);
+        if (idx === -1) return false;
+        Object.assign(sites[idx], data);
+        saveSites();
+        renderAll();
+        return true;
+    }
+
+    function deleteSite(id) {
+        const idx = sites.findIndex(s => s.id === id);
+        if (idx === -1) return false;
+        sites.splice(idx, 1);
+        saveSites();
+        renderAll();
+        return true;
+    }
+
+    // ==================== 轮播 ====================
+    function renderCarousel() {
+        const featured = sites.filter(s => s.featured);
+        if (featured.length === 0) {
+            document.querySelector('.carousel-section').style.display = 'none';
+            return;
+        }
+        document.querySelector('.carousel-section').style.display = '';
+
+        const track = document.getElementById('carouselTrack');
+        const dots = document.getElementById('carouselDots');
+        track.innerHTML = '';
+        dots.innerHTML = '';
+
+        featured.forEach((site, i) => {
+            const slide = document.createElement('div');
+            slide.className = 'carousel-slide';
+            slide.innerHTML = `
+                <img src="${escapeHtml(site.imgUrl)}" alt="${escapeHtml(site.name)}"
+                     onerror="this.src='https://placehold.co/1200x400/f3ecdb/8b7355?text=${encodeURIComponent(site.name)}'">
+                <div class="slide-overlay">
+                    <div class="slide-location">📍 ${escapeHtml(site.location)}</div>
+                    <div class="slide-name">${escapeHtml(site.name)}</div>
+                    <div class="slide-desc">${escapeHtml(site.shortDesc)}</div>
+                </div>
+            `;
+            slide.addEventListener('click', () => openDetailPage(site.id));
+            track.appendChild(slide);
+
+            const dot = document.createElement('span');
+            dot.className = 'dot' + (i === 0 ? ' active' : '');
+            dot.addEventListener('click', () => goToSlide(i));
+            dots.appendChild(dot);
+        });
+
+        if (carouselIndex >= featured.length) carouselIndex = 0;
+        track.style.transform = `translateX(-${carouselIndex * 100}%)`;
+        startCarouselAuto();
+    }
+
+    function goToSlide(index) {
+        const featured = sites.filter(s => s.featured);
+        if (featured.length === 0) return;
+        carouselIndex = index;
+        document.getElementById('carouselTrack').style.transform = `translateX(-${index * 100}%)`;
+        document.querySelectorAll('#carouselDots .dot').forEach((d, i) => {
+            d.classList.toggle('active', i === index);
+        });
+        resetCarouselAuto();
+    }
+
+    function nextSlide() {
+        const featured = sites.filter(s => s.featured);
+        if (featured.length === 0) return;
+        carouselIndex = (carouselIndex + 1) % featured.length;
+        goToSlide(carouselIndex);
+    }
+
+    function prevSlide() {
+        const featured = sites.filter(s => s.featured);
+        if (featured.length === 0) return;
+        carouselIndex = (carouselIndex - 1 + featured.length) % featured.length;
+        goToSlide(carouselIndex);
+    }
+
+    function startCarouselAuto() {
+        stopCarouselAuto();
+        carouselTimer = setInterval(nextSlide, 4500);
+    }
+
+    function stopCarouselAuto() {
+        if (carouselTimer) { clearInterval(carouselTimer); carouselTimer = null; }
+    }
+
+    function resetCarouselAuto() {
+        stopCarouselAuto();
+        startCarouselAuto();
+    }
+
+    // ==================== 城市列表更新 ====================
+    function updateFilterTabs() {
+        const cities = [...new Set(sites.map(s => s.location))].sort();
+        const section = document.getElementById('filterSection');
+        // 保留 label
+        section.querySelectorAll('.filter-tab').forEach(t => t.remove());
+
+        const allTab = document.createElement('button');
+        allTab.className = 'filter-tab' + (currentFilter === '全部' ? ' active' : '');
+        allTab.textContent = `全部 (${sites.length})`;
+        allTab.addEventListener('click', () => setFilter('全部'));
+        section.appendChild(allTab);
+
+        cities.forEach(city => {
+            const count = sites.filter(s => s.location === city).length;
+            const tab = document.createElement('button');
+            tab.className = 'filter-tab' + (currentFilter === city ? ' active' : '');
+            tab.innerHTML = `${city} <span class="filter-count">${count}</span>`;
+            tab.addEventListener('click', () => setFilter(city));
+            section.appendChild(tab);
+        });
+    }
+
+    function setFilter(city) {
+        currentFilter = city;
+        updateFilterTabs();
+        renderGrid();
+    }
+
+    // ==================== 网格渲染 ====================
+    function renderGrid() {
+        const grid = document.getElementById('heritageGrid');
+        grid.innerHTML = '';
+
+        const filtered = currentFilter === '全部'
+            ? [...sites]
+            : sites.filter(s => s.location === currentFilter);
+
+        if (filtered.length === 0) {
+            grid.innerHTML = '<div class="no-match">📭 该城市暂无遗址数据，请选择其他城市或添加新遗址</div>';
+            return;
+        }
+
+        filtered.forEach((site, index) => {
+            const card = document.createElement('div');
+            card.className = 'heritage-card';
+            card.setAttribute('data-id', site.id);
+            card.style.animationDelay = `${index * 0.05}s`;
+
+            card.innerHTML = `
+                <div class="card-image-wrap" data-action="detail" data-id="${site.id}" title="点击查看详情">
+                    <img src="${escapeHtml(site.imgUrl)}" alt="${escapeHtml(site.name)}" loading="lazy"
+                         onerror="this.src='https://placehold.co/800x520/f3ecdb/8b7355?text=${encodeURIComponent(site.name)}'">
+                    <span class="location-badge">${escapeHtml(site.location)}</span>
+                    <span class="click-hint">📷 点击查看详情</span>
+                </div>
+                <div class="card-info">
+                    <div class="card-name">${escapeHtml(site.name)}</div>
+                    <div class="card-desc">${escapeHtml(site.shortDesc)}</div>
+                    <div class="card-actions">
+                        <button data-action="edit" data-id="${site.id}">✎ 编辑</button>
+                        <button data-action="delete" data-id="${site.id}" class="btn-delete">✕ 删除</button>
+                    </div>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+
+        // 事件委托
+        grid.querySelectorAll('[data-action="detail"]').forEach(el => {
+            el.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openDetailPage(parseInt(el.getAttribute('data-id')));
+            });
+        });
+        grid.querySelectorAll('[data-action="edit"]').forEach(el => {
+            el.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openEditModal(parseInt(el.getAttribute('data-id')));
+            });
+        });
+        grid.querySelectorAll('[data-action="delete"]').forEach(el => {
+            el.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const id = parseInt(el.getAttribute('data-id'));
+                const site = sites.find(s => s.id === id);
+                if (site && confirm(`确定要删除「${site.name}」吗？此操作不可恢复。`)) {
+                    deleteSite(id);
+                }
+            });
+        });
+    }
+
+    function renderAll() {
+        renderCarousel();
+        updateFilterTabs();
+        renderGrid();
+    }
+
+    // ==================== 详情页 ====================
+    function openDetailPage(siteId) {
+        const site = sites.find(s => s.id === siteId);
+        if (!site) return;
+
+        const detailHtml = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${escapeHtml(site.name)} - 湖湘文化遗址</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
+    <style>
+        :root{--ink-deep:#1a1410;--ink-body:#3d3226;--ink-muted:#7a6e5e;--paper:#faf6ed;--paper-warm:#f3ecdb;--cream:#fffef9;--vermillion:#b5343a;--vermillion-deep:#8b1a2b;--gold:#c9a24e;--gold-light:#e0c878;--font-display:'ZCOOL XiaoWei','Noto Serif SC',serif;--font-heading:'Noto Serif SC','SimSun',serif;--font-body:'Noto Serif SC','PingFang SC','Microsoft YaHei',sans-serif}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:var(--font-body);background:var(--paper);background-image:radial-gradient(ellipse at 50% 0%,rgba(201,162,78,0.07) 0%,transparent 60%),radial-gradient(ellipse at 50% 100%,rgba(181,52,58,0.04) 0%,transparent 50%);min-height:100vh;display:flex;flex-direction:column;align-items:center}
+        .top-bar{width:100%;height:3px;background:linear-gradient(90deg,transparent,var(--gold),var(--vermillion),var(--gold),transparent)}
+        .container{max-width:880px;width:92%;margin:26px auto 60px}
+        .hero-img{width:100%;aspect-ratio:16/7;border-radius:22px;overflow:hidden;background:var(--paper-warm);margin-bottom:24px;box-shadow:0 12px 40px rgba(26,20,16,0.12);position:relative}
+        .hero-img img{width:100%;height:100%;object-fit:cover;display:block;cursor:pointer;transition:transform 0.5s}
+        .hero-img:hover img{transform:scale(1.03)}
+        .hero-img .img-overlay{position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,rgba(26,20,16,0.35) 100%);pointer-events:none}
+        .hero-img .img-label{position:absolute;bottom:18px;left:22px;font-family:var(--font-heading);font-size:0.78rem;color:#fff;background:rgba(0,0,0,0.5);padding:4px 14px;border-radius:18px;pointer-events:none}
+        .header{margin-bottom:20px}
+        .header .location{display:inline-block;font-family:var(--font-heading);font-size:0.8rem;color:var(--vermillion);letter-spacing:0.12em;margin-bottom:6px;padding:3px 15px;border:1px solid rgba(181,52,58,0.3);border-radius:18px}
+        .header h1{font-family:var(--font-display);font-size:2.2rem;font-weight:400;color:var(--ink-deep);letter-spacing:0.05em;margin:8px 0 4px}
+        .header .subtitle{font-family:var(--font-heading);color:var(--ink-muted);font-size:0.9rem}
+        .divider{display:flex;align-items:center;gap:10px;margin:16px 0 24px;max-width:260px}
+        .divider .line{flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+        .divider .dot{width:5px;height:5px;background:var(--vermillion);border-radius:50%;opacity:0.6}
+        .content-section,.gallery-section{background:var(--cream);border-radius:18px;padding:24px 26px;box-shadow:0 4px 20px rgba(26,20,16,0.04);border:1px solid rgba(180,160,130,0.18);margin-bottom:18px}
+        .content-section h2,.gallery-section h2{font-family:var(--font-heading);font-size:1.1rem;color:var(--ink-deep);margin-bottom:10px}
+        .content-section .detail-text{font-size:0.93rem;line-height:1.85;color:var(--ink-body);padding:6px 0}
+        .gallery-placeholder{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+        .gallery-placeholder .gallery-slot{aspect-ratio:4/3;border-radius:12px;background:linear-gradient(135deg,var(--paper-warm),var(--paper));border:2px dashed rgba(180,160,130,0.4);display:flex;align-items:center;justify-content:center;color:var(--ink-muted);font-size:0.8rem;transition:all 0.3s;cursor:pointer}
+        .gallery-placeholder .gallery-slot:hover{background:var(--gold-pale);border-color:var(--gold);color:var(--bronze-dark)}
+        .btn-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px;justify-content:center}
+        .btn{font-family:var(--font-heading);font-size:0.88rem;font-weight:600;padding:9px 24px;border-radius:36px;border:none;cursor:pointer;letter-spacing:0.05em;transition:all 0.25s;text-decoration:none}
+        .btn-gallery{background:var(--vermillion-deep);color:#fff}
+        .btn-gallery:hover{background:var(--vermillion);transform:translateY(-2px);box-shadow:0 6px 20px rgba(181,52,58,0.25)}
+        .btn-back{background:transparent;color:var(--ink-muted);border:1.5px solid var(--paper-dark)}
+        .btn-back:hover{background:var(--paper-dark)}
+        .footer{text-align:center;padding:8px;font-size:0.74rem;color:var(--ink-muted);margin-top:16px}
+        @media(max-width:600px){.header h1{font-size:1.5rem}.gallery-placeholder{grid-template-columns:repeat(2,1fr)}}
+    </style>
+</head>
+<body>
+<div class="top-bar"></div>
+<div class="container">
+    <div class="hero-img">
+        <img src="${escapeHtml(site.imgUrl)}" alt="${escapeHtml(site.name)}" title="点击返回主柜浏览更多遗址"
+             onclick="window.close()"
+             onerror="this.src='https://placehold.co/900x400/f3ecdb/8b7355?text=${encodeURIComponent(site.name)}'">
+        <div class="img-overlay"></div>
+        <div class="img-label">📍 ${escapeHtml(site.location)} · ${escapeHtml(site.name)} — 点击图片返回主柜</div>
+    </div>
+    <div class="header">
+        <span class="location">${escapeHtml(site.location)}</span>
+        <h1>${escapeHtml(site.name)}</h1>
+        <p class="subtitle">${escapeHtml(site.shortDesc)}</p>
+    </div>
+    <div class="divider"><span class="line"></span><span class="dot"></span><span class="line"></span></div>
+    <div class="content-section">
+        <h2>📖 遗址介绍</h2>
+        <div class="detail-text">${escapeHtml(site.detailContent)}</div>
+    </div>
+    <div class="gallery-section">
+        <h2>🖼️ 图片集 <span style="font-size:0.7rem;color:var(--ink-muted);font-weight:400;">（即将开放）</span></h2>
+        <div class="gallery-placeholder">
+            <div class="gallery-slot" title="图片集功能即将上线">🏯<br><span style="font-size:0.7rem;">即将上线</span></div>
+            <div class="gallery-slot" title="图片集功能即将上线">🏞️<br><span style="font-size:0.7rem;">即将上线</span></div>
+            <div class="gallery-slot" title="图片集功能即将上线">📸<br><span style="font-size:0.7rem;">即将上线</span></div>
+        </div>
+        <p style="font-size:0.76rem;color:var(--ink-muted);margin-top:10px;text-align:center">📌 图片集功能即将开放，届时可浏览该遗址高清图集</p>
+    </div>
+    <div class="btn-row">
+        <button class="btn btn-gallery" onclick="alert('图片集功能即将上线！\\n\\n届时可浏览「${escapeHtml(site.name)}」的高清图集。')">🖼️ 查看完整图片集（即将开放）</button>
+        <button class="btn btn-back" onclick="window.close()">↩ 关闭返回主柜</button>
+    </div>
+    <div class="footer">湖湘文脉 · 遗址风华 | ${escapeHtml(site.name)}</div>
+</div>
+</body>
+</html>`;
+
+        const win = window.open();
+        if (win) {
+            win.document.write(detailHtml);
+            win.document.title = site.name + ' - 湖湘文化遗址';
+        } else {
+            alert('请允许浏览器弹窗以查看详情页');
+        }
+    }
+
+    // ==================== 编辑模态框 ====================
+    function openEditModal(siteId) {
+        const site = sites.find(s => s.id === siteId);
+        if (!site) return;
+        editingId = siteId;
+        document.getElementById('modalTitle').textContent = '编辑遗址';
+        document.getElementById('inputName').value = site.name;
+        document.getElementById('inputLocation').value = site.location;
+        document.getElementById('inputShortDesc').value = site.shortDesc;
+        document.getElementById('inputImgUrl').value = site.imgUrl || '';
+        document.getElementById('inputDetail').value = site.detailContent || '';
+        showImgPreview(site.imgUrl);
+        document.getElementById('editModal').classList.add('active');
+    }
+
+    function openAddModal() {
+        editingId = null;
+        document.getElementById('modalTitle').textContent = '添加新遗址';
+        document.getElementById('inputName').value = '';
+        document.getElementById('inputLocation').value = '';
+        document.getElementById('inputShortDesc').value = '';
+        document.getElementById('inputImgUrl').value = '';
+        document.getElementById('inputDetail').value = '';
+        hideImgPreview();
+        document.getElementById('editModal').classList.add('active');
+    }
+
+    function closeModal() {
+        document.getElementById('editModal').classList.remove('active');
+        editingId = null;
+    }
+
+    function saveModal() {
+        const name = document.getElementById('inputName').value.trim();
+        if (!name) { alert('请输入遗址名称'); return; }
+        const loc = document.getElementById('inputLocation').value.trim();
+        const data = {
+            name,
+            location: loc || '湖南',
+            shortDesc: document.getElementById('inputShortDesc').value.trim() || '暂无描述',
+            imgUrl: document.getElementById('inputImgUrl').value.trim() || `https://picsum.photos/seed/${Date.now()}/800/520`,
+            detailContent: document.getElementById('inputDetail').value.trim() || '暂无详细介绍。'
+        };
+        if (editingId !== null) {
+            updateSite(editingId, data);
+        } else {
+            addSite(data.name, data.location, data.shortDesc, data.imgUrl, data.detailContent);
+        }
+        closeModal();
+    }
+
+    function showImgPreview(url) {
+        const preview = document.getElementById('imgPreview');
+        if (url) { preview.src = url; preview.style.display = 'block'; }
+        else hideImgPreview();
+    }
+    function hideImgPreview() {
+        const p = document.getElementById('imgPreview');
+        p.style.display = 'none'; p.src = '';
+    }
+
+    // ==================== 跨窗口同步 ====================
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'hunanHeritageSites' && e.newValue) {
+            try {
+                const updated = JSON.parse(e.newValue);
+                if (Array.isArray(updated)) {
+                    sites = updated;
+                    if (sites.length > 0) nextId = Math.max(...sites.map(s => s.id)) + 1;
+                    renderAll();
+                }
+            } catch(ex) {}
+        }
+    });
+
+    // ==================== 工具函数 ====================
+    function escapeHtml(str) {
+        return String(str).replace(/[&<>"']/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            if (m === '"') return '&quot;';
+            if (m === "'") return '&#39;';
+            return m;
+        });
+    }
+
+    // ==================== 事件绑定 ====================
+    document.getElementById('addBtn').addEventListener('click', openAddModal);
+    document.getElementById('scrollTopBtn').addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    document.getElementById('modalSave').addEventListener('click', saveModal);
+    document.getElementById('modalCancel').addEventListener('click', closeModal);
+    document.getElementById('editModal').addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+    });
+    document.getElementById('inputImgUrl').addEventListener('input', function(e) {
+        showImgPreview(e.target.value);
+    });
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeModal();
+    });
+
+    // 轮播箭头
+    document.getElementById('carouselPrev').addEventListener('click', prevSlide);
+    document.getElementById('carouselNext').addEventListener('click', nextSlide);
+
+    // 轮播鼠标悬停暂停
+    const carouselWrap = document.getElementById('carouselWrap');
+    carouselWrap.addEventListener('mouseenter', stopCarouselAuto);
+    carouselWrap.addEventListener('mouseleave', startCarouselAuto);
+
+    // 触摸滑动
+    let touchStartX = 0;
+    carouselWrap.addEventListener('touchstart', (e) => {
+        touchStartX = e.touches[0].clientX;
+        stopCarouselAuto();
+    });
+    carouselWrap.addEventListener('touchend', (e) => {
+        const diff = touchStartX - e.changedTouches[0].clientX;
+        if (Math.abs(diff) > 40) {
+            diff > 0 ? nextSlide() : prevSlide();
+        }
+        startCarouselAuto();
+    });
+
+    // ==================== 卷轴开场动画 ====================
+    function runScrollIntro() {
+        // 诗句渐显
+        const poem = document.querySelector('.scroll-poem');
+        if (poem) poem.classList.add('visible');
+
+        // JS统一动画：纸(scaleX) + 左右柄(left) 同速同步
+        const paper = document.querySelector('.scroll-paper');
+        const leftRod = document.querySelector('.scroll-left');
+        const rightRod = document.querySelector('.scroll-right');
+        const wrapper = document.querySelector('.scroll-wrapper');
+
+        if (!paper || !leftRod || !rightRod || !wrapper) return;
+
+        const ww = wrapper.clientWidth;
+        const rodW = 40;        // 柄宽
+        const rodGap = 4;       // 柄与纸边间距
+        const paperInset = 50;  // 纸距wrapper边距
+        const paperHalf = (ww - paperInset * 2) / 2;  // 纸半宽
+        const rodFromCenter = rodW / 2 + rodGap;      // 柄中心距纸边
+
+        const duration = 1800;  // 动画时长ms
+        const delay = 600;      // 延迟ms
+        const startTime = performance.now() + delay;
+
+        // 初始状态：清除margin偏移，精确计算位置
+        leftRod.style.marginLeft = '0';
+        rightRod.style.marginLeft = '0';
+        paper.style.transform = 'scaleX(0)';
+        leftRod.style.left = (ww / 2 - rodW - rodGap) + 'px';
+        rightRod.style.left = (ww / 2 + rodGap) + 'px';
+
+        function frame(now) {
+            let t = (now - startTime) / duration;
+            if (t < 0) { requestAnimationFrame(frame); return; }
+            if (t > 1) t = 1;
+
+            // easeOutCubic
+            const e = 1 - Math.pow(1 - t, 3);
+
+            // 纸：scaleX(e) — 从0展开到1
+            paper.style.transform = 'scaleX(' + e + ')';
+
+            // 柄：跟踪纸的视觉边缘
+            const edgeMove = paperHalf * e;  // 纸边从中心向外移动的距离
+            leftRod.style.left = (ww / 2 - edgeMove - rodW - rodGap) + 'px';
+            rightRod.style.left = (ww / 2 + edgeMove + rodGap) + 'px';
+
+            if (t < 1) {
+                requestAnimationFrame(frame);
+            } else {
+                // 纸柄到位后，触发视角渐入 + 金光桃花源
+                wrapper.classList.add('zoom-in');
+                const burst = document.querySelector('.golden-burst');
+                if (burst) burst.classList.add('active');
+
+                // 视角入卷完成后关闭
+                setTimeout(() => {
+                    const intro = document.getElementById('scrollIntro');
+                    intro.style.transition = 'opacity 0.35s ease';
+                    intro.style.opacity = '0';
+                    setTimeout(() => {
+                        intro.style.display = 'none';
+                        if (poem) poem.remove();
+                    }, 350);
+                }, 2000); // zoom-in动画2s
+            }
+        }
+
+        setTimeout(() => requestAnimationFrame(frame), delay);
+    }
+
+    // 页面加载完成后运行
+    window.addEventListener('load', () => {
+        setTimeout(runScrollIntro, 200);
+    });
+
+    // ==================== 启动 ====================
+    initParticles();
+    loadSites();
+    renderAll();
+})();
+</script>
+</body>
+</html>
