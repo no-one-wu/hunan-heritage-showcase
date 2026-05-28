@@ -1600,6 +1600,19 @@
         animate();
     }
 
+    // ==================== Firebase 数据工具 ====================
+    // Firebase 不原生支持数组，存入的数组会变成 {0:item,1:item,...}
+    // 读取时需转回数组格式
+    function fbToArray(data) {
+        if (!data) return [];
+        if (Array.isArray(data)) return data;
+        // Firebase 对象转数组：{0:..., 1:..., 2:...}
+        if (typeof data === 'object') {
+            return Object.keys(data).sort((a,b) => a-b).map(k => data[k]);
+        }
+        return [];
+    }
+
     // ==================== 数据加载 (Firebase) ====================
     const DATA_VER = 2;
     function loadSites() {
@@ -1613,9 +1626,9 @@
             return fbDb.ref('sites').once('value');
         }).then(snapshot => {
             if (!snapshot || snapshot.key === 'dataVersion') return;
-            const data = snapshot.val();
-            if (data && Array.isArray(data) && data.length > 0) {
-                sites = data;
+            const s = fbToArray(snapshot.val());
+            if (s.length > 0) {
+                sites = s;
                 normalizeSites();
                 nextId = Math.max(...sites.map(s => s.id)) + 1;
             }
@@ -1638,18 +1651,18 @@
 
     function saveSites() {
         fbDb.ref('sites').set(sites).then(() => {
-            console.log('数据已同步到云端');
+            console.log('OK');
         }).catch(err => {
-            console.error('同步失败', err);
+            console.error('ERR', err);
         });
         renderAll();
     }
 
     // 监听其他设备的 Firebase 变化
     fbDb.ref('sites').on('value', snapshot => {
-        const data = snapshot.val();
-        if (data && Array.isArray(data)) {
-            sites = data;
+        const s = fbToArray(snapshot.val());
+        if (s.length > 0) {
+            sites = s;
             normalizeSites();
             if (sites.length > 0) nextId = Math.max(...sites.map(s => s.id)) + 1;
             renderAll();
