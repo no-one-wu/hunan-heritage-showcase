@@ -2346,7 +2346,7 @@
     // initParticles(); // 已禁用 — 性能优化
     updateAdminUI();
     loadSites();
-    renderAll();
+    // renderAll() 由 Firebase 回调触发，避免 Firebase 未返回时空渲染
 })();
 </script>
 </body>
