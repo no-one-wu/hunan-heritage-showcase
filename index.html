@@ -912,6 +912,55 @@
         .btn-cancel { background: var(--paper-dark); color: var(--ink-body); }
         .btn-cancel:hover { background: #d4c9b5; }
 
+        /* ========== 管理员按钮 ========== */
+        .admin-btn {
+            position: fixed;
+            top: 16px;
+            right: 20px;
+            z-index: 9999;
+            font-family: var(--font-heading);
+            font-size: 0.78rem;
+            font-weight: 600;
+            padding: 8px 18px;
+            border-radius: 24px;
+            border: 1.5px solid var(--paper-dark);
+            background: rgba(255,255,255,0.75);
+            backdrop-filter: blur(6px);
+            color: var(--ink-muted);
+            cursor: pointer;
+            letter-spacing: 0.04em;
+            transition: all 0.3s;
+            box-shadow: var(--shadow-sm);
+        }
+        .admin-btn:hover { border-color: var(--gold); color: var(--ink-body); }
+        .admin-btn.logged-in { background: var(--vermillion-deep); color: #fff; border-color: var(--vermillion-deep); }
+        .admin-btn.logged-in:hover { background: var(--vermillion); }
+
+        /* ========== 管理员隐藏控制 ========== */
+        .admin-only { display: none !important; }
+        body.is-admin .admin-only { display: flex !important; }
+        body.is-admin .admin-only-inline { display: inline-flex !important; }
+        body.is-admin .admin-only-block { display: block !important; }
+
+        /* ========== 文件上传按钮 ========== */
+        .upload-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-family: var(--font-heading);
+            font-size: 0.78rem;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 24px;
+            border: 1.5px dashed var(--gold);
+            background: rgba(201,162,78,0.06);
+            color: var(--bronze);
+            cursor: pointer;
+            transition: all 0.25s;
+            margin-top: 4px;
+        }
+        .upload-btn:hover { background: var(--gold-pale); border-style: solid; }
+
         /* ========== 响应式 ========== */
         @media (max-width: 1100px) {
             .heritage-grid { grid-template-columns: repeat(3, 1fr); gap: 22px 16px; }
@@ -1046,6 +1095,9 @@
     </div>
 </div>
 
+<!-- ===== 管理员按钮 ===== -->
+<button id="adminBtn" class="admin-btn" title="管理员登录">🔒 管理员登录</button>
+
 <div class="main-container">
     <!-- ===== 头部 ===== -->
     <header class="hero">
@@ -1088,15 +1140,29 @@
 
     <!-- ===== 操作按钮 ===== -->
     <div class="action-bar">
-        <button id="addBtn" class="btn-primary">＋ 添加条目</button>
-        <button id="exportBtn" class="btn-secondary">📦 导出数据</button>
-        <button id="importBtn" class="btn-secondary">📥 导入数据</button>
+        <button id="addBtn" class="btn-primary admin-only-inline">＋ 添加条目</button>
+        <button id="exportBtn" class="btn-secondary admin-only-inline">📦 导出数据</button>
+        <button id="importBtn" class="btn-secondary admin-only-inline">📥 导入数据</button>
         <input type="file" id="importFile" accept=".json" style="display:none">
         <button id="scrollTopBtn" class="btn-secondary">↑ 回到顶部</button>
     </div>
 
     <div class="footer-note">
         点击卡片图片 · 进入详情页浏览 | 轮播自动切换 · 城市标签筛选 | 所有内容支持编辑与同步
+    </div>
+</div>
+
+<!-- ===== 登录模态框 ===== -->
+<div id="loginModal" class="modal-overlay">
+    <div class="modal-panel" style="max-width:360px">
+        <h3 id="loginTitle">🔒 管理员登录</h3>
+        <label>密码</label>
+        <input type="password" id="loginPassword" placeholder="请输入管理员密码" autocomplete="off">
+        <div class="modal-buttons">
+            <button class="btn-cancel" id="loginCancel">取消</button>
+            <button class="btn-save" id="loginSubmit">登录</button>
+        </div>
+        <p id="loginError" style="color:var(--vermillion);font-size:0.78rem;text-align:center;margin-top:8px;display:none"></p>
     </div>
 </div>
 
@@ -1115,8 +1181,10 @@
         </select>
         <label>简短描述</label>
         <input type="text" id="inputShortDesc" placeholder="一句话概括特色" autocomplete="off">
-        <label>图片URL</label>
-        <input type="text" id="inputImgUrl" placeholder="输入网络图片地址" autocomplete="off">
+        <label>图片URL / 本地上传</label>
+        <input type="text" id="inputImgUrl" placeholder="输入网络图片地址或点击下方上传" autocomplete="off">
+        <input type="file" id="inputImgFile" accept="image/*" style="display:none">
+        <button type="button" class="upload-btn" id="uploadImgBtn">📁 选择本地图片</button>
         <img id="imgPreview" class="img-preview" style="display:none;" alt="预览">
         <label>详细介绍</label>
         <textarea id="inputDetail" rows="3" placeholder="历史背景、文化价值..."></textarea>
@@ -1129,6 +1197,87 @@
 
 <script>
 (function() {
+    // ==================== SHA-256 哈希 ====================
+    async function sha256(msg) {
+        const buf = new TextEncoder().encode(msg);
+        const hash = await crypto.subtle.digest('SHA-256', buf);
+        return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2,'0')).join('');
+    }
+
+    // ==================== 管理员认证 ====================
+    const DEFAULT_PASSWORD_HASH = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918'; // admin123
+    const AUTH_KEY = 'hunanHeritageAdminAuth';
+
+    function isLoggedIn() {
+        return sessionStorage.getItem(AUTH_KEY) === '1';
+    }
+
+    function updateAdminUI() {
+        const btn = document.getElementById('adminBtn');
+        if (isLoggedIn()) {
+            btn.textContent = '👤 管理员模式';
+            btn.className = 'admin-btn logged-in';
+            btn.title = '点击退出';
+            document.body.classList.add('is-admin');
+        } else {
+            btn.textContent = '🔒 管理员登录';
+            btn.className = 'admin-btn';
+            btn.title = '管理员登录';
+            document.body.classList.remove('is-admin');
+        }
+        renderAll();
+    }
+
+    function openLoginModal() {
+        document.getElementById('loginPassword').value = '';
+        document.getElementById('loginError').style.display = 'none';
+        document.getElementById('loginModal').classList.add('active');
+        setTimeout(() => document.getElementById('loginPassword').focus(), 150);
+    }
+
+    function closeLoginModal() {
+        document.getElementById('loginModal').classList.remove('active');
+    }
+
+    async function handleLogin() {
+        const pw = document.getElementById('loginPassword').value;
+        if (!pw) { showLoginError('请输入密码'); return; }
+        const hash = await sha256(pw);
+        const storedHash = localStorage.getItem('hunanAdminPasswordHash') || DEFAULT_PASSWORD_HASH;
+        if (hash === storedHash) {
+            sessionStorage.setItem(AUTH_KEY, '1');
+            closeLoginModal();
+            updateAdminUI();
+        } else {
+            showLoginError('密码错误');
+        }
+    }
+
+    function handleLogout() {
+        sessionStorage.removeItem(AUTH_KEY);
+        updateAdminUI();
+    }
+
+    function showLoginError(msg) {
+        const el = document.getElementById('loginError');
+        el.textContent = msg;
+        el.style.display = 'block';
+    }
+
+    // ==================== 图片 Base64 转换 ====================
+    function handleImageUpload(file) {
+        return new Promise((resolve, reject) => {
+            if (!file || !file.type.startsWith('image/')) {
+                reject(new Error('请选择图片文件'));
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => reject(new Error('读取失败'));
+            reader.readAsDataURL(file);
+        });
+    }
+
     // ==================== 文化遗产数据 ====================
     const defaultSites = [
         {
@@ -1693,7 +1842,7 @@
                 <div class="card-info">
                     <div class="card-name">${escapeHtml(site.name)}</div>
                     <div class="card-desc">${escapeHtml(site.shortDesc)}</div>
-                    <div class="card-actions">
+                    <div class="card-actions" style="${isLoggedIn() ? '' : 'display:none'}">
                         <button data-action="edit" data-id="${site.id}">✎ 编辑</button>
                         <button data-action="delete" data-id="${site.id}" class="btn-delete">✕ 删除</button>
                     </div>
@@ -1904,6 +2053,7 @@
         document.getElementById('inputCategory').value = site.category || 'site';
         document.getElementById('inputShortDesc').value = site.shortDesc;
         document.getElementById('inputImgUrl').value = site.imgUrl || '';
+        document.getElementById('inputImgUrl').removeAttribute('data-base64');
         document.getElementById('inputDetail').value = site.detailContent || '';
         showImgPreview(site.imgUrl);
         document.getElementById('editModal').classList.add('active');
@@ -1917,6 +2067,7 @@
         document.getElementById('inputCategory').value = 'site';
         document.getElementById('inputShortDesc').value = '';
         document.getElementById('inputImgUrl').value = '';
+        document.getElementById('inputImgUrl').removeAttribute('data-base64');
         document.getElementById('inputDetail').value = '';
         hideImgPreview();
         document.getElementById('editModal').classList.add('active');
@@ -1932,12 +2083,15 @@
         if (!name) { alert('请输入名称'); return; }
         const loc = document.getElementById('inputLocation').value.trim();
         const cat = document.getElementById('inputCategory').value;
+        const imgInput = document.getElementById('inputImgUrl');
+        const base64 = imgInput.getAttribute('data-base64');
+        const imgUrl = base64 || imgInput.value.trim() || `https://picsum.photos/seed/${Date.now()}/800/520`;
         const data = {
             name,
             location: loc || '湖南',
             category: cat || 'site',
             shortDesc: document.getElementById('inputShortDesc').value.trim() || '暂无描述',
-            imgUrl: document.getElementById('inputImgUrl').value.trim() || `https://picsum.photos/seed/${Date.now()}/800/520`,
+            imgUrl: imgUrl,
             detailContent: document.getElementById('inputDetail').value.trim() || '暂无详细介绍。'
         };
         if (editingId !== null) {
@@ -1994,6 +2148,42 @@
             return m;
         });
     }
+
+    // ==================== 管理员登录事件 ====================
+    document.getElementById('adminBtn').addEventListener('click', () => {
+        if (isLoggedIn()) { handleLogout(); } else { openLoginModal(); }
+    });
+    document.getElementById('loginSubmit').addEventListener('click', handleLogin);
+    document.getElementById('loginCancel').addEventListener('click', closeLoginModal);
+    document.getElementById('loginPassword').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') handleLogin();
+    });
+    document.getElementById('loginModal').addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) closeLoginModal();
+    });
+
+    // ==================== 图片上传事件 ====================
+    document.getElementById('uploadImgBtn').addEventListener('click', () => {
+        document.getElementById('inputImgFile').click();
+    });
+    document.getElementById('inputImgFile').addEventListener('change', async function() {
+        const file = this.files[0];
+        if (!file) return;
+        try {
+            const base64 = await handleImageUpload(file);
+            document.getElementById('inputImgUrl').value = base64.substring(0, 60) + '...';
+            document.getElementById('inputImgUrl').setAttribute('data-base64', base64);
+            showImgPreview(base64);
+        } catch(e) {
+            alert('图片读取失败: ' + e.message);
+        }
+        this.value = '';
+    });
+    document.getElementById('inputImgUrl').addEventListener('input', function() {
+        const val = this.value.trim();
+        this.removeAttribute('data-base64');
+        showImgPreview(val);
+    });
 
     // ==================== 事件绑定 ====================
     document.getElementById('addBtn').addEventListener('click', openAddModal);
@@ -2084,8 +2274,29 @@
 
     // ==================== 启动 ====================
     // initParticles(); // 已禁用 — 性能优化
+    updateAdminUI();
     loadSites();
     renderAll();
+
+    // 如果 localStorage 无数据，尝试加载远程 data.json（管理员发布的数据）
+    if (sites.length === 0 || !localStorage.getItem('hunanHeritageSites')) {
+        fetch('data.json?' + Date.now())
+            .then(r => { if (r.ok) return r.json(); throw new Error('no data'); })
+            .then(data => {
+                if (Array.isArray(data) && data.length > 0) {
+                    sites = data;
+                    sites.forEach(s => {
+                        if (!s.category) s.category = 'site';
+                        if (!s.gallery) s.gallery = [];
+                        if (s.featured === undefined) s.featured = false;
+                    });
+                    nextId = Math.max(...sites.map(s => s.id)) + 1;
+                    saveSites();
+                    renderAll();
+                }
+            })
+            .catch(() => {});
+    }
 })();
 </script>
 </body>
