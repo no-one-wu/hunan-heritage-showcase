@@ -1201,17 +1201,28 @@
 <script>
 (function() {
     // ==================== Firebase 初始化 ====================
-    const firebaseConfig = {
-        apiKey: "AIzaSyCpfpBfPFzq1mPbN2cxrfC1YZLjPsXKOvY",
-        authDomain: "hunan-heritage.firebaseapp.com",
-        databaseURL: "https://hunan-heritage-default-rtdb.asia-southeast1.firebasedatabase.app",
-        projectId: "hunan-heritage",
-        storageBucket: "hunan-heritage.firebasestorage.app",
-        messagingSenderId: "504612208692",
-        appId: "1:504612208692:web:c8687f9e762a6561750a61"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const fbDb = firebase.database();
+    // ==================== Firebase 初始化（带降级） ====================
+    let fbDb = null;
+    let useFirebase = false;
+    try {
+        const firebaseConfig = {
+            apiKey: "AIzaSyCpfpBfPFzq1mPbN2cxrfC1YZLjPsXKOvY",
+            authDomain: "hunan-heritage.firebaseapp.com",
+            databaseURL: "https://hunan-heritage-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "hunan-heritage",
+            storageBucket: "hunan-heritage.firebasestorage.app",
+            messagingSenderId: "504612208692",
+            appId: "1:504612208692:web:c8687f9e762a6561750a61"
+        };
+        if (typeof firebase !== 'undefined') {
+            firebase.initializeApp(firebaseConfig);
+            fbDb = firebase.database();
+            useFirebase = true;
+            console.log('Firebase 已连接');
+        }
+    } catch(e) {
+        console.warn('Firebase 不可用，使用本地存储', e);
+    }
 
     // ==================== SHA-256 哈希 ====================
     async function sha256(msg) {
@@ -1600,45 +1611,55 @@
         animate();
     }
 
-    // ==================== Firebase 数据工具 ====================
-    // Firebase 不原生支持数组，存入的数组会变成 {0:item,1:item,...}
-    // 读取时需转回数组格式
-    function fbToArray(data) {
-        if (!data) return [];
-        if (Array.isArray(data)) return data;
-        // Firebase 对象转数组：{0:..., 1:..., 2:...}
-        if (typeof data === 'object') {
-            return Object.keys(data).sort((a,b) => a-b).map(k => data[k]);
-        }
-        return [];
-    }
-
-    // ==================== 数据加载 (Firebase) ====================
-    const DATA_VER = 2;
+    // ==================== 数据加载 ====================
+    const DATA_VER = 3;
     function loadSites() {
-        fbDb.ref('dataVersion').once('value').then(verSnap => {
-            if (verSnap.val() !== DATA_VER) {
-                sites = JSON.parse(JSON.stringify(defaultSites));
-                normalizeSites();
-                nextId = 21;
-                return fbDb.ref('/').set({ dataVersion: DATA_VER, sites: sites });
+        if (useFirebase) {
+            fbDb.ref('dataVersion').once('value').then(verSnap => {
+                if (verSnap.val() !== DATA_VER) {
+                    sites = JSON.parse(JSON.stringify(defaultSites));
+                    normalizeSites();
+                    nextId = 21;
+                    return fbDb.ref('/').set({ dataVersion: DATA_VER, sites: sites });
+                }
+                return fbDb.ref('sites').once('value');
+            }).then(snapshot => {
+                if (snapshot && snapshot.key !== 'dataVersion') {
+                    const s = fbToArray(snapshot.val());
+                    if (s.length > 0) { sites = s; normalizeSites(); nextId = Math.max(...sites.map(s => s.id)) + 1; }
+                }
+                renderAll();
+            }).catch(() => { renderAll(); });
+        } else {
+            // localStorage 降级
+            const storedVer = localStorage.getItem('hunanDataVersion');
+            const stored = localStorage.getItem('hunanHeritageSites');
+            if (storedVer == DATA_VER && stored) {
+                try {
+                    sites = JSON.parse(stored);
+                    if (sites.length > 0) { normalizeSites(); nextId = Math.max(...sites.map(s => s.id)) + 1; renderAll(); return; }
+                } catch(e) {}
             }
-            return fbDb.ref('sites').once('value');
-        }).then(snapshot => {
-            if (!snapshot || snapshot.key === 'dataVersion') return;
-            const s = fbToArray(snapshot.val());
-            if (s.length > 0) {
-                sites = s;
-                normalizeSites();
-                nextId = Math.max(...sites.map(s => s.id)) + 1;
-            }
-            renderAll();
-        }).catch(() => {
             sites = JSON.parse(JSON.stringify(defaultSites));
             normalizeSites();
             nextId = 21;
+            saveSitesLocal();
+            localStorage.setItem('hunanDataVersion', DATA_VER);
             renderAll();
-        });
+        }
+    }
+
+    function saveSites() {
+        if (useFirebase) {
+            fbDb.ref('sites').set(sites).catch(() => {});
+        } else {
+            saveSitesLocal();
+        }
+        renderAll();
+    }
+
+    function saveSitesLocal() {
+        localStorage.setItem('hunanHeritageSites', JSON.stringify(sites));
     }
 
     function normalizeSites() {
@@ -1649,25 +1670,21 @@
         });
     }
 
-    function saveSites() {
-        fbDb.ref('sites').set(sites).then(() => {
-            console.log('OK');
-        }).catch(err => {
-            console.error('ERR', err);
+    // Firebase 实时监听
+    if (useFirebase) {
+        fbDb.ref('sites').on('value', snapshot => {
+            const s = fbToArray(snapshot.val());
+            if (s.length > 0) { sites = s; normalizeSites(); nextId = Math.max(...sites.map(s => s.id)) + 1; renderAll(); }
         });
-        renderAll();
     }
 
-    // 监听其他设备的 Firebase 变化
-    fbDb.ref('sites').on('value', snapshot => {
-        const s = fbToArray(snapshot.val());
-        if (s.length > 0) {
-            sites = s;
-            normalizeSites();
-            if (sites.length > 0) nextId = Math.max(...sites.map(s => s.id)) + 1;
-            renderAll();
-        }
-    });
+    // ==================== Firebase 数据工具 ====================
+    function fbToArray(data) {
+        if (!data) return [];
+        if (Array.isArray(data)) return data;
+        if (typeof data === 'object') return Object.keys(data).sort((a,b) => a-b).map(k => data[k]);
+        return [];
+    }
 
     // ==================== CRUD ====================
     function addSite(name, location, shortDesc, imgUrl, detailContent, category) {
@@ -2032,11 +2049,18 @@
     const isAdmin = sessionStorage.getItem('hunanHeritageAdminAuth') === '1';
     if (isAdmin) { document.body.classList.add('detail-is-admin'); }
 
-    firebase.initializeApp({apiKey:"AIzaSyCpfpBfPFzq1mPbN2cxrfC1YZLjPsXKOvY",authDomain:"hunan-heritage.firebaseapp.com",databaseURL:"https://hunan-heritage-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"hunan-heritage",storageBucket:"hunan-heritage.firebasestorage.app",messagingSenderId:"504612208692",appId:"1:504612208692:web:c8687f9e762a6561750a61"});
-    const fbDb2 = firebase.database();
+    var useFirebase2 = false, fbDb2 = null;
+    try {
+        if (typeof firebase !== 'undefined') {
+            firebase.initializeApp({apiKey:"AIzaSyCpfpBfPFzq1mPbN2cxrfC1YZLjPsXKOvY",authDomain:"hunan-heritage.firebaseapp.com",databaseURL:"https://hunan-heritage-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"hunan-heritage",storageBucket:"hunan-heritage.firebasestorage.app",messagingSenderId:"504612208692",appId:"1:504612208692:web:c8687f9e762a6561750a61"});
+            fbDb2 = firebase.database();
+            useFirebase2 = true;
+        }
+    } catch(e) {}
 
     function saveGallery() {
-        fbDb2.ref('sites/' + (SITE_ID - 1) + '/gallery').set(gallery);
+        if (useFirebase2) { fbDb2.ref('sites/' + (SITE_ID - 1) + '/gallery').set(gallery).catch(function(){}); }
+        localStorage.setItem('galleryUpdate', JSON.stringify({siteId: SITE_ID, gallery: gallery, timestamp: Date.now()}));
     }
 
     function renderGallery() {
