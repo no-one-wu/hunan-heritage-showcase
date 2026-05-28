@@ -1213,6 +1213,14 @@
         return sessionStorage.getItem(AUTH_KEY) === '1';
     }
 
+    function requireAuth() {
+        if (!isLoggedIn()) {
+            alert('此操作需要管理员权限，访客不可进行增删改操作。\n\n如有投稿建议，请发送邮件至：2124804059@qq.com');
+            return false;
+        }
+        return true;
+    }
+
     function updateAdminUI() {
         const btn = document.getElementById('adminBtn');
         if (isLoggedIn()) {
@@ -1646,6 +1654,7 @@
     }
 
     function deleteSite(id) {
+        if (!requireAuth()) return false;
         const idx = sites.findIndex(s => s.id === id);
         if (idx === -1) return false;
         sites.splice(idx, 1);
@@ -1862,12 +1871,14 @@
         grid.querySelectorAll('[data-action="edit"]').forEach(el => {
             el.addEventListener('click', (e) => {
                 e.stopPropagation();
+                if (!requireAuth()) return;
                 openEditModal(parseInt(el.getAttribute('data-id')));
             });
         });
         grid.querySelectorAll('[data-action="delete"]').forEach(el => {
             el.addEventListener('click', (e) => {
                 e.stopPropagation();
+                if (!requireAuth()) return;
                 const id = parseInt(el.getAttribute('data-id'));
                 const site = sites.find(s => s.id === id);
                 if (site && confirm(`确定要删除「${site.name}」吗？此操作不可恢复。`)) {
@@ -2045,6 +2056,7 @@
 
     // ==================== 编辑模态框 ====================
     function openEditModal(siteId) {
+        if (!requireAuth()) return;
         const site = sites.find(s => s.id === siteId);
         if (!site) return;
         editingId = siteId;
@@ -2061,6 +2073,7 @@
     }
 
     function openAddModal() {
+        if (!requireAuth()) return;
         editingId = null;
         document.getElementById('modalTitle').textContent = '添加新条目';
         document.getElementById('inputName').value = '';
@@ -2197,6 +2210,7 @@
 
     // 导出数据
     document.getElementById('exportBtn').addEventListener('click', () => {
+        if (!requireAuth()) return;
         const data = JSON.stringify(sites, null, 2);
         const blob = new Blob([data], {type: 'application/json'});
         const a = document.createElement('a');
@@ -2208,6 +2222,7 @@
 
     // 导入数据
     document.getElementById('importBtn').addEventListener('click', () => {
+        if (!requireAuth()) return;
         document.getElementById('importFile').click();
     });
     document.getElementById('importFile').addEventListener('change', function() {
