@@ -2006,39 +2006,57 @@
             img.onclick = function() { window.open(url); };
             img.onerror = function() { this.src = 'https://placehold.co/400x300/f3ecdb/8b7355?text=加载失败'; };
             item.appendChild(img);
-            var del = document.createElement('button');
-            del.className = 'del-btn';
-            del.textContent = '×';
-            del.setAttribute('data-idx', i);
-            del.onclick = function(e) {
-                e.stopPropagation();
-                gallery.splice(parseInt(this.getAttribute('data-idx')), 1);
-                saveGallery();
-                renderGallery();
-            };
-            item.appendChild(del);
+            if (isAdmin) {
+                var del = document.createElement('button');
+                del.className = 'del-btn';
+                del.textContent = '×';
+                del.setAttribute('data-idx', i);
+                del.onclick = function(e) {
+                    e.stopPropagation();
+                    gallery.splice(parseInt(this.getAttribute('data-idx')), 1);
+                    saveGallery();
+                    renderGallery();
+                };
+                item.appendChild(del);
+            }
             grid.appendChild(item);
         });
-        const addSlot = document.createElement('div');
-        addSlot.className = 'gallery-add';
-        addSlot.id = 'galleryAddSlot';
-        addSlot.textContent = '+ 添加图片';
-        addSlot.onclick = showAddInput;
-        grid.appendChild(addSlot);
+        if (isAdmin) {
+            const addSlot = document.createElement('div');
+            addSlot.className = 'gallery-add';
+            addSlot.id = 'galleryAddSlot';
+            addSlot.textContent = '+ 添加图片';
+            addSlot.onclick = showAddInput;
+            grid.appendChild(addSlot);
+        }
+        if (gallery.length === 0 && !isAdmin) {
+            grid.innerHTML = '<div class="gallery-empty">暂无图片</div>';
+        }
     }
 
+    var pendingBase64 = null;
     function showAddInput() {
         var slot = document.getElementById('galleryAddSlot');
         if (!slot) return;
-        slot.innerHTML = '<input type="text" id="newImgUrl" placeholder="粘贴图片URL" style="width:100%;padding:8px 10px;border:1px solid rgba(180,160,130,0.5);border-radius:8px;font-size:0.8rem;font-family:inherit;outline:none;background:rgba(255,255,255,0.8)"><div style="display:flex;gap:6px;margin-top:6px"><button id="confirmAdd" style="flex:1;padding:5px;border:none;border-radius:6px;background:#8b1a2b;color:#fff;cursor:pointer;font-size:0.75rem">确认</button><button id="cancelAdd" style="flex:1;padding:5px;border:1px solid rgba(180,160,130,0.4);border-radius:6px;background:transparent;cursor:pointer;font-size:0.75rem;color:#666">取消</button></div>';
+        pendingBase64 = null;
+        slot.innerHTML = '<input type="text" id="newImgUrl" placeholder="输入图片URL"><input type="file" id="newImgFile" accept="image/*" style="display:none"><div style="display:flex;gap:6px;align-items:center;margin-top:6px"><button type="button" id="galleryUploadBtn" style="font-family:inherit;font-size:0.78rem;padding:5px 12px;border-radius:16px;border:1.5px dashed #c9a24e;background:rgba(201,162,78,0.06);color:#8b7355;cursor:pointer">📷 本地上传</button><span id="uploadStatus" style="font-size:0.7rem;color:#7a6e5e;display:none"></span></div><div style="display:flex;gap:6px;margin-top:6px"><button id="confirmAdd" style="flex:1;padding:5px;border:none;border-radius:6px;background:#8b1a2b;color:#fff;cursor:pointer;font-size:0.75rem">确认</button><button id="cancelAdd" style="flex:1;padding:5px;border:1px solid rgba(180,160,130,0.4);border-radius:6px;background:transparent;cursor:pointer;font-size:0.75rem;color:#666">取消</button></div>';
         slot.className = 'gallery-add active';
         slot.onclick = null;
+        document.getElementById('galleryUploadBtn').onclick = function() { document.getElementById('newImgFile').click(); };
+        document.getElementById('newImgFile').onchange = function(e) {
+            var file = e.target.files[0];
+            if (!file) return;
+            var reader = new FileReader();
+            reader.onload = function(ev) {
+                pendingBase64 = ev.target.result;
+                document.getElementById('uploadStatus').textContent = '已选择: ' + file.name;
+                document.getElementById('uploadStatus').style.display = 'inline';
+            };
+            reader.readAsDataURL(file);
+        };
         document.getElementById('confirmAdd').onclick = function() {
-            var url = document.getElementById('newImgUrl').value.trim();
-            if (url) {
-                gallery.push(url);
-                saveGallery();
-            }
+            var url = pendingBase64 || document.getElementById('newImgUrl').value.trim();
+            if (url) { gallery.push(url); saveGallery(); }
             renderGallery();
         };
         document.getElementById('cancelAdd').onclick = function() { renderGallery(); };
