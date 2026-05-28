@@ -1307,7 +1307,7 @@
         {
             id: 1, name: '岳麓书院', location: '长沙', category: 'site',
             shortDesc: '千年学府，中国四大书院之一',
-            imgUrl: 'https://placehold.co/800x520/#2c3e2d/f3ecdb?text=%E5%B2%B3%E9%BA%93%E4%B9%A6%E9%99%A2',
+            imgUrl: 'hnbj.png',
             detailContent: '岳麓书院位于长沙岳麓山下，始建于北宋开宝九年（公元976年），历经宋、元、明、清各代，是中国现存规模最大、保存最完好的书院建筑群。书院秉承"实事求是"的治学精神，培养了大批经世致用的人才，被誉为"千年学府"。现存建筑多为明清遗构，包括大门、二门、讲堂、半学斋、教学斋、百泉轩、御书楼、文庙等。',
             featured: true,
             gallery: []
@@ -1601,7 +1601,7 @@
     }
 
     // ==================== 数据加载 (Firebase) ====================
-    const DATA_VER = 1;
+    const DATA_VER = 2;
     function loadSites() {
         fbDb.ref('dataVersion').once('value').then(verSnap => {
             if (verSnap.val() !== DATA_VER) {
