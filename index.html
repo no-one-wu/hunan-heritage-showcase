@@ -7,6 +7,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
     <style>
         :root {
             --ink-deep: #1a1410;
@@ -1198,6 +1200,19 @@
 
 <script>
 (function() {
+    // ==================== Firebase 初始化 ====================
+    const firebaseConfig = {
+        apiKey: "AIzaSyCpfpBfPFzq1mPbN2cxrfC1YZLjPsXKOvY",
+        authDomain: "hunan-heritage.firebaseapp.com",
+        databaseURL: "https://hunan-heritage-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "hunan-heritage",
+        storageBucket: "hunan-heritage.firebasestorage.app",
+        messagingSenderId: "504612208692",
+        appId: "1:504612208692:web:c8687f9e762a6561750a61"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const fbDb = firebase.database();
+
     // ==================== SHA-256 哈希 ====================
     async function sha256(msg) {
         const buf = new TextEncoder().encode(msg);
@@ -1585,45 +1600,57 @@
         animate();
     }
 
-    // ==================== 数据加载 ====================
+    // ==================== 数据加载 (Firebase) ====================
     function loadSites() {
-        const DATA_VERSION = 5; // 递增此值强制刷新数据
-        const storedVer = localStorage.getItem('hunanDataVersion');
-        const stored = localStorage.getItem('hunanHeritageSites');
+        fbDb.ref('sites').once('value').then(snapshot => {
+            const data = snapshot.val();
+            if (data && Array.isArray(data) && data.length > 0) {
+                sites = data;
+                normalizeSites();
+                nextId = Math.max(...sites.map(s => s.id)) + 1;
+                renderAll();
+            } else {
+                // 首次初始化：上传默认数据
+                sites = JSON.parse(JSON.stringify(defaultSites));
+                normalizeSites();
+                nextId = 21;
+                saveSites();
+            }
+        }).catch(() => {
+            sites = JSON.parse(JSON.stringify(defaultSites));
+            normalizeSites();
+            nextId = 21;
+            renderAll();
+        });
+    }
 
-        // 版本不匹配则丢弃旧数据
-        if (storedVer != DATA_VERSION) {
-            localStorage.removeItem('hunanHeritageSites');
-        } else if (stored) {
-            try {
-                sites = JSON.parse(stored);
-                if (sites.length > 0) {
-                    let hasFeatured = false;
-                    sites.forEach(s => {
-                        if (s.category === undefined) s.category = 'site';
-                        if (s.featured === undefined) s.featured = false;
-                        if (s.featured) hasFeatured = true;
-                        if (!s.gallery) s.gallery = [];
-                    });
-                    if (!hasFeatured) {
-                        sites.slice(0, Math.min(5, sites.length)).forEach(s => s.featured = true);
-                    }
-                    nextId = Math.max(...sites.map(s => s.id)) + 1;
-                    saveSites();
-                    localStorage.setItem('hunanDataVersion', DATA_VERSION);
-                    return;
-                }
-            } catch(e) {}
-        }
-        sites = JSON.parse(JSON.stringify(defaultSites));
-        sites.forEach(s => { if (!s.gallery) s.gallery = []; });
-        saveSites();
-        localStorage.setItem('hunanDataVersion', DATA_VERSION);
+    function normalizeSites() {
+        sites.forEach(s => {
+            if (!s.category) s.category = 'site';
+            if (s.featured === undefined) s.featured = false;
+            if (!s.gallery) s.gallery = [];
+        });
     }
 
     function saveSites() {
-        localStorage.setItem('hunanHeritageSites', JSON.stringify(sites));
+        fbDb.ref('sites').set(sites).then(() => {
+            console.log('数据已同步到云端');
+        }).catch(err => {
+            console.error('同步失败', err);
+        });
+        renderAll();
     }
+
+    // 监听其他设备的 Firebase 变化
+    fbDb.ref('sites').on('value', snapshot => {
+        const data = snapshot.val();
+        if (data && Array.isArray(data)) {
+            sites = data;
+            normalizeSites();
+            if (sites.length > 0) nextId = Math.max(...sites.map(s => s.id)) + 1;
+            renderAll();
+        }
+    });
 
     // ==================== CRUD ====================
     function addSite(name, location, shortDesc, imgUrl, detailContent, category) {
@@ -1906,6 +1933,8 @@
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${escapeHtml(site.name)} - 湖湘文化遗产</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
     <style>
         :root{--ink-deep:#1a1410;--ink-body:#3d3226;--ink-muted:#7a6e5e;--paper:#faf6ed;--paper-warm:#f3ecdb;--cream:#fffef9;--vermillion:#b5343a;--vermillion-deep:#8b1a2b;--gold:#c9a24e;--gold-light:#e0c878;--font-display:'ZCOOL XiaoWei','Noto Serif SC',serif;--font-heading:'Noto Serif SC','SimSun',serif;--font-body:'Noto Serif SC','PingFang SC','Microsoft YaHei',sans-serif}
         *{margin:0;padding:0;box-sizing:border-box}
@@ -1986,12 +2015,11 @@
     const isAdmin = sessionStorage.getItem('hunanHeritageAdminAuth') === '1';
     if (isAdmin) { document.body.classList.add('detail-is-admin'); }
 
+    firebase.initializeApp({apiKey:"AIzaSyCpfpBfPFzq1mPbN2cxrfC1YZLjPsXKOvY",authDomain:"hunan-heritage.firebaseapp.com",databaseURL:"https://hunan-heritage-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"hunan-heritage",storageBucket:"hunan-heritage.firebasestorage.app",messagingSenderId:"504612208692",appId:"1:504612208692:web:c8687f9e762a6561750a61"});
+    const fbDb2 = firebase.database();
+
     function saveGallery() {
-        localStorage.setItem('galleryUpdate', JSON.stringify({
-            siteId: SITE_ID,
-            gallery: gallery,
-            timestamp: Date.now()
-        }));
+        fbDb2.ref('sites/' + (SITE_ID - 1) + '/gallery').set(gallery);
     }
 
     function renderGallery() {
@@ -2319,26 +2347,6 @@
     updateAdminUI();
     loadSites();
     renderAll();
-
-    // 如果 localStorage 无数据，尝试加载远程 data.json（管理员发布的数据）
-    if (sites.length === 0 || !localStorage.getItem('hunanHeritageSites')) {
-        fetch('data.json?' + Date.now())
-            .then(r => { if (r.ok) return r.json(); throw new Error('no data'); })
-            .then(data => {
-                if (Array.isArray(data) && data.length > 0) {
-                    sites = data;
-                    sites.forEach(s => {
-                        if (!s.category) s.category = 'site';
-                        if (!s.gallery) s.gallery = [];
-                        if (s.featured === undefined) s.featured = false;
-                    });
-                    nextId = Math.max(...sites.map(s => s.id)) + 1;
-                    saveSites();
-                    renderAll();
-                }
-            })
-            .catch(() => {});
-    }
 })();
 </script>
 </body>
