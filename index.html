@@ -1450,19 +1450,11 @@
             gallery: ['gallery/汨罗江畔端午习俗/1748af30d76fb70d245b5a682cc0385b.png','gallery/汨罗江畔端午习俗/7201f6d6dc314c53d439cca720737c6d.png','gallery/汨罗江畔端午习俗/824325b67d7c9028e302446b20317ae3.png'],
             detailContent: '汨罗江畔端午习俗源远流长，与屈原文化紧密相连。每逢端午节，岳阳汨罗江沿岸百姓会举行龙舟竞渡、吃粽子、挂艾草、饮雄黄酒等传统活动，以纪念伟大的爱国诗人屈原。其中汨罗龙舟赛最具特色，场面壮观热烈。2009年，包括汨罗江畔端午习俗在内的中国端午节被列入联合国教科文组织人类非物质文化遗产代表作名录。',
             featured: true
-        },
-        {
-            id: 21, name: 'lh', location: '1', category: 'intangible',
-            shortDesc: 'lh',
-            imgUrl: 'gallery/img_2c4bac378a17.jpg',
-            detailContent: '1',
-            featured: false,
-            gallery: []
         }
     ];
 
     let sites = [];
-    let nextId = 22;
+    let nextId = 21;
     let editingId = null;
     let currentFilter = '全部';
     let currentCategory = '全部';
@@ -1596,7 +1588,7 @@
     }
 
     // ==================== 数据加载 ====================
-    const DATA_VER = 6;
+    const DATA_VER = 7;
     function loadSites() {
         const storedVer = localStorage.getItem('hunanDataVersion');
         const stored = localStorage.getItem('hunanHeritageSites');
